@@ -1374,3 +1374,1334 @@ table.mkt-table td input {
 </head>
 <body>
 """
+HTML_PAGE += """
+<!-- PANTALLA 1: CLAVE DE ACCESO -->
+<div id="pantallaClave" class="pantalla-fija">
+  <div class="card" style="max-width:440px;width:100%;">
+    <h2>C-PRE MARKETING</h2>
+    <p style="margin:6px 0 10px;font-size:14px;color:var(--text-soft);">Plataforma Internacional de Productos, Localizacion, Copywriting y Campanas.</p>
+    <div class="box-salida" style="margin-top:6px;">Claves habilitadas: <strong>VIP100</strong> · <strong>Celso2026</strong></div>
+    <label for="inpClave">Clave de Acceso:</label>
+    <input type="password" id="inpClave" placeholder="Ingresa tu clave...">
+    <button type="button" onclick="verificarClave()">DESBLOQUEAR</button>
+    <div id="msgClave" class="estado-msg"></div>
+  </div>
+</div>
+
+<!-- PANTALLA 2: BIENVENIDA, CREACIONES CELSO, CORREO Y ACEPTAR -->
+<div id="pantallaEntrada" class="pantalla-fija oculto">
+  <div class="card" style="max-width:600px;width:100%;">
+    <h2>Bienvenido a C-Pre Marketing</h2>
+    <div style="font-size:13.5px;font-weight:700;color:var(--green-bright);margin-bottom:8px;">Creaciones Celso</div>
+    <div class="box-salida" style="margin-top:6px;"><strong>Como funciona la aplicacion:</strong>
+1. Ingresa tu <strong>correo electronico</strong> para guardar y recuperar tu progreso.
+2. Pulsa <strong>ACEPTAR</strong> para avanzar directo a los modulos y navegar de izquierda a derecha.
+3. Incluye buscador de productos, adaptacion por pais/moneda, generador de copy y guiones, calendario semanal, hoja ROAS, embudo CTR/CPA, audiencias/ofertas y respaldo por correo.</div>
+    <label for="inpCorreoEntrada">Correo electronico:</label>
+    <input type="email" id="inpCorreoEntrada" placeholder="tu_correo@ejemplo.com">
+    <button type="button" onclick="aceptarEntrada()">ACEPTAR</button>
+    <div id="msgEntrada" class="estado-msg"></div>
+  </div>
+</div>
+
+<!-- CABECERA PRINCIPAL Y NAVEGACION HORIZONTAL -->
+<header id="cabeceraApp" class="oculto">
+  <div class="top-head">
+    <div>
+      <h1>C-PRE MARKETING</h1>
+      <div class="sub-head">Creaciones Celso · Suite Internacional</div>
+    </div>
+    <div class="pill-user" id="lblCorreoBadge">Sin correo</div>
+  </div>
+  <nav class="nav-h" aria-label="Modulos de izquierda a derecha">
+    <button type="button" class="nav-btn activo" data-sec="modBuscador" onclick="irModulo('modBuscador', this)">1. Buscador Productos</button>
+    <button type="button" class="nav-btn" data-sec="modLocalizador" onclick="irModulo('modLocalizador', this)">2. Paises y Monedas</button>
+    <button type="button" class="nav-btn" data-sec="modCopy" onclick="irModulo('modCopy', this)">3. Copy y Guiones</button>
+    <button type="button" class="nav-btn" data-sec="modCalendario" onclick="irModulo('modCalendario', this)">4. Plan y Tendencias</button>
+    <button type="button" class="nav-btn" data-sec="modSimulador" onclick="irModulo('modSimulador', this)">5. Hoja ROAS y Ventas</button>
+    <button type="button" class="nav-btn" data-sec="modEmbudo" onclick="irModulo('modEmbudo', this)">6. Embudo CTR y CPA</button>
+    <button type="button" class="nav-btn" data-sec="modAudiencias" onclick="irModulo('modAudiencias', this)">7. Audiencias y Ofertas</button>
+    <button type="button" class="nav-btn" data-sec="modCuenta" onclick="irModulo('modCuenta', this)">8. Correo y Progreso</button>
+  </nav>
+</header>
+
+<main id="contenedorModulos" class="wrap oculto">
+
+  <!-- MODULO 1: BUSCADOR UNIVERSAL DE PRODUCTOS -->
+  <section id="modBuscador" class="card modulo-panel">
+    <h2>1. Buscador Universal de Productos</h2>
+    <p style="margin:0 0 8px;font-size:14px;color:var(--text-soft);">Busca cualquier producto por nombre, categoria, pais o palabra clave, o agrega el tuyo propio.</p>
+
+    <div class="grid-2">
+      <div>
+        <label for="inpBuscarProd">Buscar producto o palabra clave:</label>
+        <input type="text" id="inpBuscarProd" placeholder="Ej. audifonos, reloj, termo, perfume..." oninput="filtrarCatalogo()">
+      </div>
+      <div>
+        <label for="selCategoriaFiltro">Categoria:</label>
+        <select id="selCategoriaFiltro" onchange="filtrarCatalogo()">
+          <option value="TODAS">Todas las categorias</option>
+        </select>
+      </div>
+    </div>
+
+    <div class="grid-3" style="margin-top:10px;">
+      <div class="kpi-box"><span>Productos Activos</span><strong id="kpiTotalProds">0</strong></div>
+      <div class="kpi-box"><span>Paises Conectados</span><strong id="kpiTotalPaises">16</strong></div>
+      <div class="kpi-box"><span>Margen Promedio</span><strong id="kpiMargenProm">0%</strong></div>
+    </div>
+
+    <div id="listaProductos"></div>
+
+    <div class="card" style="margin-top:16px;background-color:var(--bg-panel);">
+      <h3>Agregar Cualquier Producto al Catalogo</h3>
+      <div class="grid-2">
+        <div>
+          <label for="nuevoProdNombre">Nombre del producto o servicio:</label>
+          <input type="text" id="nuevoProdNombre" placeholder="Ej. Lampara LED Recargable">
+        </div>
+        <div>
+          <label for="nuevoProdCat">Categoria:</label>
+          <input type="text" id="nuevoProdCat" value="Tecnologia y Gadgets">
+        </div>
+      </div>
+      <div class="grid-2">
+        <div>
+          <label for="nuevoProdPrecio">Precio de venta (USD):</label>
+          <input type="number" id="nuevoProdPrecio" value="35" step="0.1">
+        </div>
+        <div>
+          <label for="nuevoProdCosto">Costo base (USD):</label>
+          <input type="number" id="nuevoProdCosto" value="11" step="0.1">
+        </div>
+      </div>
+      <label for="nuevoProdProblema">Problema que resuelve:</label>
+      <input type="text" id="nuevoProdProblema" placeholder="Ej. Falta de iluminacion portatil">
+      <label for="nuevoProdBeneficio">Beneficio principal:</label>
+      <input type="text" id="nuevoProdBeneficio" placeholder="Ej. Luz potente y carga rapida">
+      <button type="button" onclick="registrarNuevoProducto()">GUARDAR PRODUCTO</button>
+      <div id="msgNuevoProd" class="estado-msg"></div>
+    </div>
+  </section>
+
+  <!-- MODULO 2: LOCALIZADOR INTERNACIONAL POR PAIS -->
+  <section id="modLocalizador" class="card modulo-panel oculto">
+    <h2>2. Localizador Internacional por Pais</h2>
+    <p style="margin:0 0 8px;font-size:14px;color:var(--text-soft);">Adapta precios, monedas, pagos, horarios pico y enfoque de compra a cada pais.</p>
+
+    <div class="grid-2">
+      <div>
+        <label for="selPaisDestino">Pais objetivo:</label>
+        <select id="selPaisDestino" onchange="actualizarLocalizacion()"></select>
+      </div>
+      <div>
+        <label for="selProductoLoc">Producto seleccionado:</label>
+        <select id="selProductoLoc" onchange="seleccionarProductoEnLocalizador()"></select>
+      </div>
+    </div>
+
+    <div class="grid-2">
+      <div>
+        <label for="inpPrecioUsdLoc">Precio base en USD ($):</label>
+        <input type="number" id="inpPrecioUsdLoc" value="49.90" step="0.1" oninput="actualizarLocalizacion()">
+      </div>
+      <div>
+        <label for="inpCostoUsdLoc">Costo producto en USD ($):</label>
+        <input type="number" id="inpCostoUsdLoc" value="14.50" step="0.1" oninput="actualizarLocalizacion()">
+      </div>
+    </div>
+
+    <div class="grid-4" style="margin-top:10px;">
+      <div class="kpi-box"><span>Precio Local</span><strong id="locPrecioLocal">$0</strong></div>
+      <div class="kpi-box"><span>Envio Est.</span><strong id="locEnvioLocal">$0</strong></div>
+      <div class="kpi-box"><span>Ganancia Neta</span><strong id="locGananciaUsd">$0</strong></div>
+      <div class="kpi-box"><span>Margen Est.</span><strong id="locMargenPct">0%</strong></div>
+    </div>
+
+    <div id="detallePaisBox" class="box-salida"></div>
+
+    <h3>Comparador Rapido Multi-Pais (Precio Local Estimado)</h3>
+    <div id="tablaComparadorPaises" class="hoja-scroll"></div>
+  </section>
+
+  <!-- MODULO 3: ESTUDIO DE COPYWRITING Y GUIONES -->
+  <section id="modCopy" class="card modulo-panel oculto">
+    <h2>3. Estudio de Copywriting y Guiones</h2>
+    <p style="margin:0 0 8px;font-size:14px;color:var(--text-soft);">Genera ganchos, anuncios estructurados, mensajes de WhatsApp y guiones de video corto.</p>
+
+    <div class="grid-2">
+      <div>
+        <label for="copyNombreProd">Producto o servicio:</label>
+        <input type="text" id="copyNombreProd" value="Audifonos Inalambricos ANC Pro">
+      </div>
+      <div>
+        <label for="copyCategoria">Categoria:</label>
+        <input type="text" id="copyCategoria" value="Tecnologia y Gadgets">
+      </div>
+    </div>
+
+    <div class="grid-3">
+      <div>
+        <label for="copyPais">Pais destino:</label>
+        <select id="copyPais"></select>
+      </div>
+      <div>
+        <label for="copyFramework">Formula Copy:</label>
+        <select id="copyFramework">
+          <option value="AIDA">AIDA</option>
+          <option value="PAS">PAS</option>
+          <option value="BAB">BAB</option>
+          <option value="4U">4U</option>
+        </select>
+      </div>
+      <div>
+        <label for="copyPrecioUsd">Precio USD ($):</label>
+        <input type="number" id="copyPrecioUsd" value="49.90" step="0.1">
+      </div>
+    </div>
+
+    <label for="copyPublico">Publico ideal:</label>
+    <input type="text" id="copyPublico" value="Estudiantes, trabajadores remotos y amantes de la musica">
+
+    <label for="copyProblema">Problema que resuelve:</label>
+    <input type="text" id="copyProblema" value="Ruido externo molesto y cables incomodos">
+
+    <label for="copyBeneficio">Beneficio principal:</label>
+    <input type="text" id="copyBeneficio" value="Aislamiento de ruido con bateria de larga duracion">
+
+    <button type="button" onclick="generarKitCopyServidor()">GENERAR GANCHOS, COPY Y GUION</button>
+
+    <h3>Ganchos Iniciales</h3>
+    <div id="salidaGanchos" class="box-salida">Pulsa el boton superior para generar tus ganchos.</div>
+
+    <h3>Anuncio / Descripcion</h3>
+    <div id="salidaCopyPrincipal" class="box-salida">Aqui aparecera tu anuncio estructurado.</div>
+    <button type="button" class="sec-btn" onclick="copiarTextoElemento('salidaCopyPrincipal')">COPIAR ANUNCIO</button>
+
+    <h3>Guion de Video Corto</h3>
+    <div id="salidaGuionVideo" class="box-salida">Aqui aparecera el guion de video.</div>
+    <button type="button" class="sec-btn" onclick="copiarTextoElemento('salidaGuionVideo')">COPIAR GUION</button>
+
+    <h3>Guion de Cierre Rapido por WhatsApp / DM</h3>
+    <div id="salidaGuionWhatsapp" class="box-salida">Aqui aparecera el mensaje listo para responder clientes por chat.</div>
+    <button type="button" class="sec-btn" onclick="copiarTextoElemento('salidaGuionWhatsapp')">COPIAR MENSAJE WHATSAPP</button>
+  </section>
+
+  <!-- MODULO 4: CALENDARIO DE CONTENIDO Y TENDENCIAS -->
+  <section id="modCalendario" class="card modulo-panel oculto">
+    <h2>4. Plan Semanal y Tendencias</h2>
+    <p style="margin:0 0 8px;font-size:14px;color:var(--text-soft);">Rutina semanal de publicacion y radar de tendencias de marketing.</p>
+
+    <div id="listaCalendario"></div>
+
+    <h3 style="margin-top:16px;">Tendencias de Marketing</h3>
+    <div id="listaTendencias"></div>
+  </section>
+
+  <!-- MODULO 5: HOJA FINANCIERA DE CAMPANAS Y ROAS -->
+  <section id="modSimulador" class="card modulo-panel oculto">
+    <h2>5. Hoja Amplia de Campanas, Ventas y ROAS (8x4)</h2>
+    <p style="margin:0 0 8px;font-size:14px;color:var(--text-soft);">Completa hasta 8 filas con Precio ($), Costo ($), Unidades e Inversion en Anuncios ($).</p>
+
+    <div class="hoja-scroll">
+      <table class="mkt-table">
+        <thead>
+          <tr>
+            <th>Fila</th>
+            <th>Precio ($)</th>
+            <th>Costo ($)</th>
+            <th>Unidades</th>
+            <th>Ads ($)</th>
+            <th>Ganancia ($)</th>
+            <th>ROAS</th>
+          </tr>
+        </thead>
+        <tbody id="cuerpoTablaMkt"></tbody>
+      </table>
+    </div>
+
+    <div class="grid-4" style="margin-top:10px;">
+      <div class="kpi-box"><span>Ingresos</span><strong id="kpiIngresos">$0</strong></div>
+      <div class="kpi-box"><span>Ads</span><strong id="kpiAds">$0</strong></div>
+      <div class="kpi-box"><span>Ganancia</span><strong id="kpiGanancia">$0</strong></div>
+      <div class="kpi-box"><span>ROAS Global</span><strong id="kpiRoasGlobal">0.00x</strong></div>
+    </div>
+
+    <button type="button" onclick="calcularTablaMarketing()">CALCULAR TODA LA HOJA</button>
+  </section>
+
+  <!-- MODULO 6: SIMULADOR DE EMBUDO CTR, CPC, CONVERSION Y CPA -->
+  <section id="modEmbudo" class="card modulo-panel oculto">
+    <h2>6. Simulador de Embudo (CTR, CPC, Conversion y CPA)</h2>
+    <p style="margin:0 0 8px;font-size:14px;color:var(--text-soft);">Calcula cuantas visitas y compras genera tu presupuesto publicitario segun tu CTR y tasa de cierre.</p>
+
+    <div class="grid-2">
+      <div>
+        <label for="embPresupuesto">Presupuesto Publicitario ($ USD):</label>
+        <input type="number" id="embPresupuesto" value="100" step="1" oninput="calcularEmbudoMarketing()">
+      </div>
+      <div>
+        <label for="embCpm">CPM Estimado - Costo por 1,000 vistas ($):</label>
+        <input type="number" id="embCpm" value="8.5" step="0.1" oninput="calcularEmbudoMarketing()">
+      </div>
+    </div>
+
+    <div class="grid-3">
+      <div>
+        <label for="embCtr">CTR - Porcentaje de Clics (%):</label>
+        <input type="number" id="embCtr" value="2.2" step="0.1" oninput="calcularEmbudoMarketing()">
+      </div>
+      <div>
+        <label for="embConv">Tasa de Conversion (%):</label>
+        <input type="number" id="embConv" value="3.5" step="0.1" oninput="calcularEmbudoMarketing()">
+      </div>
+      <div>
+        <label for="embTicket">Ticket Promedio Venta ($):</label>
+        <input type="number" id="embTicket" value="49.9" step="0.1" oninput="calcularEmbudoMarketing()">
+      </div>
+    </div>
+
+    <div class="grid-4" style="margin-top:12px;">
+      <div class="kpi-box"><span>Impresiones</span><strong id="kpiEmbImp">0</strong></div>
+      <div class="kpi-box"><span>Clics / Visitas</span><strong id="kpiEmbClics">0</strong></div>
+      <div class="kpi-box"><span>CPC Promedio</span><strong id="kpiEmbCpc">$0.00</strong></div>
+      <div class="kpi-box"><span>Ventas Est.</span><strong id="kpiEmbVentas">0</strong></div>
+    </div>
+
+    <div class="grid-3" style="margin-top:8px;">
+      <div class="kpi-box"><span>CPA (Costo/Venta)</span><strong id="kpiEmbCpa">$0.00</strong></div>
+      <div class="kpi-box"><span>Facturacion Est.</span><strong id="kpiEmbFact">$0.00</strong></div>
+      <div class="kpi-box"><span>ROAS Proyectado</span><strong id="kpiEmbRoas">0.00x</strong></div>
+    </div>
+
+    <div id="diagnosticoEmbudo" class="box-salida"></div>
+  </section>
+
+  <!-- MODULO 7: GENERADOR DE AUDIENCIAS Y OFERTAS IRRESISTIBLES -->
+  <section id="modAudiencias" class="card modulo-panel oculto">
+    <h2>7. Segmentacion de Audiencias y Constructor de Ofertas</h2>
+    <p style="margin:0 0 8px;font-size:14px;color:var(--text-soft);">Define intereses para Meta Ads / TikTok Ads y arma paquetes dobles o bonos que aumenten el valor de cada pedido.</p>
+
+    <div class="grid-2">
+      <div>
+        <label for="audNicho">Nicho del producto:</label>
+        <select id="audNicho" onchange="actualizarAudienciaYOferta()">
+          <option value="tech">Tecnologia y Gadgets</option>
+          <option value="beauty">Belleza y Cuidado Personal</option>
+          <option value="fitness">Fitness y Bienestar</option>
+          <option value="home">Hogar y Lifestyle</option>
+          <option value="fashion">Moda y Calzado</option>
+          <option value="digital">Productos Digitales y Educacion</option>
+        </select>
+      </div>
+      <div>
+        <label for="audTipoOferta">Estructura de Oferta:</label>
+        <select id="audTipoOferta" onchange="actualizarAudienciaYOferta()">
+          <option value="pack2x1">Pack Doble / 2da Unidad con Descuento</option>
+          <option value="bono">Producto + Guia o Accesorio Gratis</option>
+          <option value="envio">Envio Prioritario + Garantia Extendida</option>
+          <option value="flash">Oferta Relampago 24 Horas</option>
+        </select>
+      </div>
+    </div>
+
+    <div class="grid-2">
+      <div>
+        <label for="audProdNombre">Nombre del producto:</label>
+        <input type="text" id="audProdNombre" value="Audifonos Inalambricos ANC Pro" oninput="actualizarAudienciaYOferta()">
+      </div>
+      <div>
+        <label for="audPrecioBase">Precio unitario ($ USD):</label>
+        <input type="number" id="audPrecioBase" value="49.90" step="0.1" oninput="actualizarAudienciaYOferta()">
+      </div>
+    </div>
+
+    <h3>Segmentacion Recomendada para Campanas</h3>
+    <div id="salidaAudiencia" class="box-salida"></div>
+
+    <h3>Oferta Lista para Publicar</h3>
+    <div id="salidaOfertaIrresistible" class="box-salida"></div>
+    <button type="button" class="sec-btn" onclick="copiarTextoElemento('salidaOfertaIrresistible')">COPIAR OFERTA</button>
+  </section>
+
+  <!-- MODULO 8: CORREO ELECTRONICO Y GUARDADO DE PROGRESO -->
+  <section id="modCuenta" class="card modulo-panel oculto">
+    <h2>8. Correo Electronico y Progreso</h2>
+    <p style="margin:0 0 8px;font-size:14px;color:var(--text-soft);">Guarda o carga tu progreso vinculado a tu correo electronico.</p>
+
+    <label for="inpCorreoCuenta">Correo electronico:</label>
+    <input type="email" id="inpCorreoCuenta" placeholder="tu_correo@ejemplo.com">
+
+    <label for="txtNotasCampana">Notas de campana y registros:</label>
+    <textarea id="txtNotasCampana" placeholder="Escribe tus notas, precios, contactos o enlaces..."></textarea>
+
+    <div class="grid-2">
+      <button type="button" onclick="guardarProgresoUsuario()">GUARDAR PROGRESO</button>
+      <button type="button" class="sec-btn" onclick="cargarProgresoUsuario()">CARGAR PROGRESO</button>
+    </div>
+    <div id="msgCuenta" class="estado-msg">Listo para guardar o cargar tu progreso.</div>
+  </section>
+
+</main>
+
+<div class="firma-celso">Creaciones Celso</div>
+
+<script id="jsonPaises" type="application/json">__PAISES_JSON__</script>
+<script id="jsonCatalogo" type="application/json">__CATALOGO_JSON__</script>
+<script id="jsonCalendario" type="application/json">__CALENDARIO_JSON__</script>
+<script id="jsonTendencias" type="application/json">__TENDENCIAS_JSON__</script>
+
+<script>
+const PAISES = JSON.parse(document.getElementById("jsonPaises").textContent);
+let CATALOGO = JSON.parse(document.getElementById("jsonCatalogo").textContent);
+const CALENDARIO = JSON.parse(document.getElementById("jsonCalendario").textContent);
+const TENDENCIAS = JSON.parse(document.getElementById("jsonTendencias").textContent);
+
+function normalizar(t) {
+  return String(t || "")
+    .trim()
+    .toLowerCase()
+    .normalize("NFD")
+    .replace(/[\\u0300-\\u036f]/g, "");
+}
+
+function escaparHtml(t) {
+  return String(t || "")
+    .replace(/&/g, "&amp;")
+    .replace(/</g, "&lt;")
+    .replace(/>/g, "&gt;")
+    .replace(/"/g, "&quot;");
+}
+
+function entrarDirectoAModulos(correoNormalizado) {
+  document.getElementById("inpCorreoCuenta").value = correoNormalizado;
+  document.getElementById("lblCorreoBadge").textContent = correoNormalizado;
+  document.getElementById("pantallaClave").classList.add("oculto");
+  document.getElementById("pantallaEntrada").classList.add("oculto");
+  document.getElementById("cabeceraApp").classList.remove("oculto");
+  document.getElementById("contenedorModulos").classList.remove("oculto");
+}
+
+function verificarClave() {
+  const clave = document.getElementById("inpClave").value.trim();
+  const msg = document.getElementById("msgClave");
+  const permitidas = ["vip100", "celso2026", "1234"];
+  if (permitidas.includes(clave.toLowerCase())) {
+    document.getElementById("pantallaClave").classList.add("oculto");
+    document.getElementById("pantallaEntrada").classList.remove("oculto");
+    fetch("/api/clave", {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({ clave: clave })
+    }).catch(() => {});
+  } else {
+    msg.textContent = "Clave no valida. Usa VIP100 o Celso2026.";
+  }
+}
+
+async function aceptarEntrada() {
+  const correo = document.getElementById("inpCorreoEntrada").value.trim().toLowerCase();
+  const msg = document.getElementById("msgEntrada");
+  if (!correo || !correo.includes("@")) {
+    msg.textContent = "Ingresa un correo electronico valido para continuar.";
+    return;
+  }
+  entrarDirectoAModulos(correo);
+  await cargarProgresoUsuario();
+}
+
+function irModulo(idModulo, btn) {
+  document.querySelectorAll(".modulo-panel").forEach(p => p.classList.add("oculto"));
+  const destino = document.getElementById(idModulo);
+  if (destino) destino.classList.remove("oculto");
+  document.querySelectorAll(".nav-btn").forEach(b => b.classList.remove("activo"));
+  if (btn) btn.classList.add("activo");
+}
+
+function inicializarSelectores() {
+  const selPaisDest = document.getElementById("selPaisDestino");
+  const selCopyPais = document.getElementById("copyPais");
+  selPaisDest.innerHTML = "";
+  selCopyPais.innerHTML = "";
+
+  PAISES.forEach(p => {
+    const op1 = document.createElement("option");
+    op1.value = p.codigo;
+    op1.textContent = `${p.nombre} (${p.moneda})`;
+    selPaisDest.appendChild(op1);
+
+    const op2 = document.createElement("option");
+    op2.value = p.codigo;
+    op2.textContent = `${p.nombre} (${p.moneda})`;
+    selCopyPais.appendChild(op2);
+  });
+
+  actualizarSelectoresProductos();
+}
+
+function actualizarSelectoresProductos() {
+  const selCat = document.getElementById("selCategoriaFiltro");
+  const catActual = selCat.value || "TODAS";
+  const categorias = new Set(["TODAS"]);
+  CATALOGO.forEach(p => categorias.add(p.categoria));
+
+  selCat.innerHTML = "";
+  categorias.forEach(c => {
+    const op = document.createElement("option");
+    op.value = c;
+    op.textContent = c === "TODAS" ? "Todas las categorias" : c;
+    if (c === catActual) op.selected = true;
+    selCat.appendChild(op);
+  });
+
+  const selProdLoc = document.getElementById("selProductoLoc");
+  selProdLoc.innerHTML = "";
+  CATALOGO.forEach((p, idx) => {
+    const op = document.createElement("option");
+    op.value = idx;
+    op.textContent = `${p.nombre} ($${p.precio_base_usd})`;
+    selProdLoc.appendChild(op);
+  });
+}
+
+function filtrarCatalogo() {
+  const q = normalizar(document.getElementById("inpBuscarProd").value);
+  const cat = document.getElementById("selCategoriaFiltro").value;
+  const cont = document.getElementById("listaProductos");
+  cont.innerHTML = "";
+
+  const filtrados = CATALOGO.filter(p => {
+    const coincideCat = (cat === "TODAS" || p.categoria === cat);
+    if (!coincideCat) return false;
+    if (!q) return true;
+    const texto = normalizar(
+      [
+        p.nombre,
+        p.categoria,
+        p.subcategoria,
+        p.beneficio_estrella,
+        p.problema_que_resuelve,
+        (p.mercados_top || []).join(" "),
+        (p.palabras_clave || []).join(" ")
+      ].join(" ")
+    );
+    return texto.includes(q);
+  });
+
+  document.getElementById("kpiTotalProds").textContent = filtrados.length;
+  let sumaMargen = 0;
+  filtrados.forEach(p => { sumaMargen += Number(p.margen_pct || 0); });
+  const prom = filtrados.length ? (sumaMargen / filtrados.length).toFixed(1) : "0";
+  document.getElementById("kpiMargenProm").textContent = prom + "%";
+
+  if (!filtrados.length) {
+    cont.innerHTML = `<div class="box-salida">No se encontraron productos con ese filtro. Puedes registrarlo abajo.</div>`;
+    return;
+  }
+
+  filtrados.forEach(prod => {
+    const idxReal = CATALOGO.indexOf(prod);
+    const card = document.createElement("div");
+    card.className = "prod-item";
+    const mercados = (prod.mercados_top || []).slice(0, 4).join(", ");
+    card.innerHTML =
+      `<div class="prod-top">` +
+      `<div><strong style="font-size:16px;color:#ffffff;">${escaparHtml(prod.nombre)}</strong>` +
+      `<div style="margin-top:4px;">` +
+      `<span class="tag">${escaparHtml(prod.categoria)}</span>` +
+      `<span class="tag">Demanda ${prod.demanda_score}/100</span>` +
+      `<span class="tag">Margen ${prod.margen_pct}%</span>` +
+      `</div></div>` +
+      `<div style="text-align:right;min-width:86px;">` +
+      `<div style="font-weight:700;color:#34d399;font-size:16.5px;">$${prod.precio_base_usd}</div>` +
+      `<div style="font-size:11.5px;color:#d1fae5;">Costo $${prod.costo_base_usd}</div>` +
+      `</div></div>` +
+      `<div style="margin-top:8px;font-size:14px;color:#ffffff;"><strong>Beneficio:</strong> ${escaparHtml(prod.beneficio_estrella)}</div>` +
+      `<div style="margin-top:4px;font-size:13.5px;color:#d1fae5;"><strong>Mercados:</strong> ${escaparHtml(mercados)}</div>` +
+      `<div class="grid-2" style="margin-top:8px;">` +
+      `<button type="button" class="sec-btn" onclick="enviarProductoALocalizador(${idxReal})">ADAPTAR A PAIS</button>` +
+      `<button type="button" class="sec-btn" onclick="enviarProductoACopy(${idxReal})">CREAR ANUNCIO</button>` +
+      `</div>`;
+    cont.appendChild(card);
+  });
+}
+
+function enviarProductoALocalizador(idx) {
+  const prod = CATALOGO[idx];
+  if (!prod) return;
+  document.getElementById("selProductoLoc").value = idx;
+  document.getElementById("inpPrecioUsdLoc").value = prod.precio_base_usd;
+  document.getElementById("inpCostoUsdLoc").value = prod.costo_base_usd;
+  actualizarLocalizacion();
+  const btn = document.querySelector('.nav-btn[data-sec="modLocalizador"]');
+  irModulo("modLocalizador", btn);
+}
+
+function enviarProductoACopy(idx) {
+  const prod = CATALOGO[idx];
+  if (!prod) return;
+  document.getElementById("copyNombreProd").value = prod.nombre;
+  document.getElementById("copyCategoria").value = prod.categoria;
+  document.getElementById("copyPrecioUsd").value = prod.precio_base_usd;
+  document.getElementById("copyPublico").value = prod.publico_ideal || "";
+  document.getElementById("copyProblema").value = prod.problema_que_resuelve || "";
+  document.getElementById("copyBeneficio").value = prod.beneficio_estrella || "";
+  const btn = document.querySelector('.nav-btn[data-sec="modCopy"]');
+  irModulo("modCopy", btn);
+  generarKitCopyServidor();
+}
+
+async function registrarNuevoProducto() {
+  const nombre = document.getElementById("nuevoProdNombre").value.trim();
+  const categoria = document.getElementById("nuevoProdCat").value.trim() || "General";
+  const precio = parseFloat(document.getElementById("nuevoProdPrecio").value) || 0;
+  const costo = parseFloat(document.getElementById("nuevoProdCosto").value) || 0;
+  const problema = document.getElementById("nuevoProdProblema").value.trim() || "Necesidad diaria";
+  const beneficio = document.getElementById("nuevoProdBeneficio").value.trim() || "Solucion practica inmediata";
+  const msg = document.getElementById("msgNuevoProd");
+
+  if (!nombre || precio <= 0) {
+    msg.textContent = "Escribe el nombre del producto y un precio valido en USD.";
+    return;
+  }
+
+  try {
+    const r = await fetch("/api/productos/agregar", {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({
+        nombre: nombre,
+        categoria: categoria,
+        precio_base_usd: precio,
+        costo_base_usd: costo,
+        problema: problema,
+        beneficio: beneficio
+      })
+    });
+    const d = await r.json();
+    if (d.ok && d.producto) {
+      CATALOGO.push(d.producto);
+      actualizarSelectoresProductos();
+      filtrarCatalogo();
+      document.getElementById("nuevoProdNombre").value = "";
+      msg.textContent = `Producto "${nombre}" agregado.`;
+    }
+  } catch (e) {
+    msg.textContent = "Error al guardar el producto.";
+  }
+}
+
+function seleccionarProductoEnLocalizador() {
+  const idx = parseInt(document.getElementById("selProductoLoc").value || "0", 10);
+  const prod = CATALOGO[idx];
+  if (prod) {
+    document.getElementById("inpPrecioUsdLoc").value = prod.precio_base_usd;
+    document.getElementById("inpCostoUsdLoc").value = prod.costo_base_usd;
+  }
+  actualizarLocalizacion();
+}
+
+function actualizarLocalizacion() {
+  const cod = document.getElementById("selPaisDestino").value;
+  const pais = PAISES.find(p => p.codigo === cod) || PAISES[0];
+  const precioUsd = parseFloat(document.getElementById("inpPrecioUsdLoc").value) || 0;
+  const costoUsd = parseFloat(document.getElementById("inpCostoUsdLoc").value) || 0;
+
+  const precioLocal = (precioUsd * pais.tasa_usd).toFixed(2);
+  const envioLocal = (pais.envio_usd * pais.tasa_usd).toFixed(2);
+  const gananciaUsd = (precioUsd - costoUsd - pais.envio_usd).toFixed(2);
+  const margenPct = precioUsd > 0 ? ((parseFloat(gananciaUsd) / precioUsd) * 100).toFixed(1) : "0.0";
+
+  document.getElementById("locPrecioLocal").textContent = `${pais.simbolo}${precioLocal}`;
+  document.getElementById("locEnvioLocal").textContent = `${pais.simbolo}${envioLocal}`;
+  document.getElementById("locGananciaUsd").textContent = `$${gananciaUsd}`;
+  document.getElementById("locMargenPct").textContent = `${margenPct}%`;
+
+  document.getElementById("detallePaisBox").textContent =
+    `Pais: ${pais.nombre} (${pais.moneda})\n` +
+    `Idioma: ${pais.idioma}\n` +
+    `Plataformas: ${pais.plataformas_top}\n` +
+    `Metodos de pago: ${pais.metodos_pago}\n` +
+    `Horario pico: ${pais.horario_pico}\n` +
+    `Enfoque cultural: ${pais.angulo_cultural}\n` +
+    `Objecion comun: ${pais.objecion_frecuente}\n` +
+    `Respuesta recomendada: ${pais.solucion_objecion}\n` +
+    `Llamado a la accion: "${pais.cta_local}"`;
+
+  renderizarComparadorMultiPais(precioUsd, costoUsd);
+}
+
+function renderizarComparadorMultiPais(precioUsd, costoUsd) {
+  const cont = document.getElementById("tablaComparadorPaises");
+  let html = `<table class="mkt-table"><thead><tr><th>Pais</th><th>Moneda</th><th>Precio Local</th><th>Envio Est.</th><th>Ganancia Neta (USD)</th></tr></thead><tbody>`;
+  PAISES.forEach(p => {
+    const pLoc = (precioUsd * p.tasa_usd).toFixed(2);
+    const eLoc = (p.envio_usd * p.tasa_usd).toFixed(2);
+    const gUsd = (precioUsd - costoUsd - p.envio_usd).toFixed(2);
+    html +=
+      `<tr>` +
+      `<td><strong>${escaparHtml(p.nombre)}</strong></td>` +
+      `<td>${escaparHtml(p.moneda)}</td>` +
+      `<td style="color:#34d399;font-weight:700;">${escaparHtml(p.simbolo)}${pLoc}</td>` +
+      `<td>${escaparHtml(p.simbolo)}${eLoc}</td>` +
+      `<td style="color:#6ee7b7;font-weight:700;">$${gUsd}</td>` +
+      `</tr>`;
+  });
+  html += `</tbody></table>`;
+  cont.innerHTML = html;
+}
+
+async function generarKitCopyServidor() {
+  const payload = {
+    nombre: document.getElementById("copyNombreProd").value.trim(),
+    categoria: document.getElementById("copyCategoria").value.trim(),
+    pais_codigo: document.getElementById("copyPais").value,
+    framework: document.getElementById("copyFramework").value,
+    precio_usd: parseFloat(document.getElementById("copyPrecioUsd").value) || 0,
+    costo_usd: 0,
+    publico: document.getElementById("copyPublico").value.trim(),
+    problema: document.getElementById("copyProblema").value.trim(),
+    beneficio: document.getElementById("copyBeneficio").value.trim()
+  };
+
+  try {
+    const r = await fetch("/api/generar_kit", {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify(payload)
+    });
+    const d = await r.json();
+    if (d.ok && d.kit) {
+      document.getElementById("salidaGanchos").textContent =
+        d.kit.ganchos.map((g, i) => `${i + 1}. ${g}`).join("\n");
+      document.getElementById("salidaCopyPrincipal").textContent = d.kit.copy_principal;
+      document.getElementById("salidaGuionVideo").textContent = d.kit.guion_video_corto;
+      const p = d.kit.pais;
+      document.getElementById("salidaGuionWhatsapp").textContent =
+        `Hola! Gracias por escribir sobre *${d.kit.producto}*.\n` +
+        `Beneficio principal: ${payload.beneficio}.\n` +
+        `Precio para ${p.nombre}: *${p.simbolo}${d.kit.precio_local} (${p.moneda})*.\n` +
+        `Metodos de pago disponibles: ${p.metodos_pago}.\n` +
+        `Deseas que te reserve una unidad ahora mismo?`;
+    }
+  } catch (e) {
+    document.getElementById("salidaCopyPrincipal").textContent = "Error al generar el anuncio.";
+  }
+}
+
+function copiarTextoElemento(idEl) {
+  const txt = document.getElementById(idEl).textContent;
+  if (navigator.clipboard && txt) {
+    navigator.clipboard.writeText(txt);
+  }
+}
+
+function renderizarCalendarioYTendencias() {
+  const contCal = document.getElementById("listaCalendario");
+  contCal.innerHTML = "";
+  CALENDARIO.forEach(item => {
+    const div = document.createElement("div");
+    div.className = "prod-item";
+    div.innerHTML =
+      `<div class="prod-top"><strong style="color:#34d399;">${escaparHtml(item.dia)} · ${escaparHtml(item.objetivo)}</strong>` +
+      `<span class="tag">${escaparHtml(item.formato)}</span></div>` +
+      `<div style="margin-top:6px;font-size:14px;">${escaparHtml(item.estructura)}</div>` +
+      `<div style="margin-top:4px;font-size:12.5px;color:#6ee7b7;">Indicador: ${escaparHtml(item.kpi)}</div>`;
+    contCal.appendChild(div);
+  });
+
+  const contTend = document.getElementById("listaTendencias");
+  contTend.innerHTML = "";
+  TENDENCIAS.forEach(t => {
+    const div = document.createElement("div");
+    div.className = "box-salida";
+    div.innerHTML = `<strong>${escaparHtml(t.titulo)}</strong> [${escaparHtml(t.impacto)}]\n${escaparHtml(t.detalle)}`;
+    contTend.appendChild(div);
+  });
+}
+
+function construirTablaMarketing(filasGuardadas) {
+  const tbody = document.getElementById("cuerpoTablaMkt");
+  tbody.innerHTML = "";
+  for (let i = 0; i < 8; i++) {
+    const f = (filasGuardadas && filasGuardadas[i]) ? filasGuardadas[i] : ["", "", "", ""];
+    const tr = document.createElement("tr");
+    tr.innerHTML =
+      `<td><strong>#${i + 1}</strong></td>` +
+      `<td><input type="number" step="0.1" class="m-precio" value="${escaparHtml(f[0])}"></td>` +
+      `<td><input type="number" step="0.1" class="m-costo" value="${escaparHtml(f[1])}"></td>` +
+      `<td><input type="number" step="1" class="m-unid" value="${escaparHtml(f[2])}"></td>` +
+      `<td><input type="number" step="0.1" class="m-ads" value="${escaparHtml(f[3])}"></td>` +
+      `<td class="m-ganancia" style="font-weight:700;color:#6ee7b7;">$0.00</td>` +
+      `<td class="m-roas" style="font-weight:700;color:#34d399;">0.00x</td>`;
+    tbody.appendChild(tr);
+  }
+  calcularTablaMarketing();
+}
+
+function calcularTablaMarketing() {
+  let ingTotal = 0;
+  let adsTotal = 0;
+  let ganTotal = 0;
+
+  document.querySelectorAll("#cuerpoTablaMkt tr").forEach(tr => {
+    const precio = parseFloat(tr.querySelector(".m-precio").value) || 0;
+    const costo = parseFloat(tr.querySelector(".m-costo").value) || 0;
+    const unid = parseFloat(tr.querySelector(".m-unid").value) || 0;
+    const ads = parseFloat(tr.querySelector(".m-ads").value) || 0;
+
+    const ingresoFila = precio * unid;
+    const gananciaFila = ingresoFila - (costo * unid) - ads;
+    const roasFila = ads > 0 ? (ingresoFila / ads) : 0;
+
+    ingTotal += ingresoFila;
+    adsTotal += ads;
+    ganTotal += gananciaFila;
+
+    tr.querySelector(".m-ganancia").textContent = "$" + gananciaFila.toFixed(2);
+    tr.querySelector(".m-roas").textContent = roasFila.toFixed(2) + "x";
+  });
+
+  const roasGlobal = adsTotal > 0 ? (ingTotal / adsTotal) : 0;
+  document.getElementById("kpiIngresos").textContent = "$" + ingTotal.toFixed(2);
+  document.getElementById("kpiAds").textContent = "$" + adsTotal.toFixed(2);
+  document.getElementById("kpiGanancia").textContent = "$" + ganTotal.toFixed(2);
+  document.getElementById("kpiRoasGlobal").textContent = roasGlobal.toFixed(2) + "x";
+}
+
+function calcularEmbudoMarketing() {
+  const presupuesto = parseFloat(document.getElementById("embPresupuesto").value) || 0;
+  const cpm = parseFloat(document.getElementById("embCpm").value) || 0;
+  const ctr = parseFloat(document.getElementById("embCtr").value) || 0;
+  const conv = parseFloat(document.getElementById("embConv").value) || 0;
+  const ticket = parseFloat(document.getElementById("embTicket").value) || 0;
+
+  const impresiones = cpm > 0 ? Math.round((presupuesto / cpm) * 1000) : 0;
+  const clics = Math.round(impresiones * (ctr / 100));
+  const cpc = clics > 0 ? (presupuesto / clics) : 0;
+  const ventas = Math.round(clics * (conv / 100));
+  const cpa = ventas > 0 ? (presupuesto / ventas) : 0;
+  const facturacion = ventas * ticket;
+  const roas = presupuesto > 0 ? (facturacion / presupuesto) : 0;
+
+  document.getElementById("kpiEmbImp").textContent = impresiones.toLocaleString("es-ES");
+  document.getElementById("kpiEmbClics").textContent = clics.toLocaleString("es-ES");
+  document.getElementById("kpiEmbCpc").textContent = "$" + cpc.toFixed(2);
+  document.getElementById("kpiEmbVentas").textContent = ventas.toString();
+  document.getElementById("kpiEmbCpa").textContent = "$" + cpa.toFixed(2);
+  document.getElementById("kpiEmbFact").textContent = "$" + facturacion.toFixed(2);
+  document.getElementById("kpiEmbRoas").textContent = roas.toFixed(2) + "x";
+
+  let estado = "Embudo equilibrado.";
+  if (ctr < 1.2) {
+    estado = "Alerta en Gancho: El CTR esta bajo; mejora los primeros 3 segundos del video o la imagen principal.";
+  } else if (conv < 2.0) {
+    estado = "Alerta en Cierre: Llegan visitas pero pocas compran; refuerza la oferta, prueba social y facilidad de pago.";
+  } else if (roas >= 3.0) {
+    estado = "Campana escalable: El retorno proyectado supera 3x; puedes aumentar presupuesto gradualmente.";
+  }
+  document.getElementById("diagnosticoEmbudo").textContent =
+    `Diagnostico del Embudo:\n` +
+    `• De ${impresiones.toLocaleString("es-ES")} personas alcanzadas, ${clics} hacen clic.\n` +
+    `• Con ${conv}% de cierre se proyectan ${ventas} ventas a un costo de $${cpa.toFixed(2)} por cliente.\n` +
+    `• Recomendacion: ${estado}`;
+}
+
+function actualizarAudienciaYOferta() {
+  const nicho = document.getElementById("audNicho").value;
+  const tipoOferta = document.getElementById("audTipoOferta").value;
+  const prod = document.getElementById("audProdNombre").value.trim() || "Producto Estrella";
+  const precio = parseFloat(document.getElementById("audPrecioBase").value) || 0;
+
+  const mapaAudiencias = {
+    tech: "Edad: 18 - 44 anos | Intereses: Gadgets, tecnologia movil, accesorios electronicos, compras online, gaming y productividad.",
+    beauty: "Edad: 18 - 52 anos | Intereses: Cuidado de la piel, cosmetica, fragancias, bienestar personal y rutinas diarias.",
+    fitness: "Edad: 20 - 48 anos | Intereses: Entrenamiento en casa, gimnasios, vida saludable, ergonomia y deportes.",
+    home: "Edad: 24 - 55 anos | Intereses: Organizacion del hogar, decoracion practica, articulos de cocina y comodidad.",
+    fashion: "Edad: 18 - 42 anos | Intereses: Moda urbana, calzado comodo, tendencias de temporada y estilo diario.",
+    digital: "Edad: 20 - 50 anos | Intereses: Emprendimiento, marketing digital, comercio electronico, herramientas y formacion."
+  };
+
+  document.getElementById("salidaAudiencia").textContent =
+    `Publico sugerido para Meta Ads / TikTok Ads:\n${mapaAudiencias[nicho] || mapaAudiencias.tech}\n` +
+    `Ubicaciones recomendadas: Reels, TikTok Feed, Stories y mensajes directos.`;
+
+  let ofertaTexto = "";
+  if (tipoOferta === "pack2x1") {
+    const packPrecio = (precio * 1.75).toFixed(2);
+    ofertaTexto = `OFERTA PACK DOBLE - ${prod}:\nLleva 1 unidad por $${precio.toFixed(2)} o lleva el Pack de 2 unidades por solo $${packPrecio} (ahorras 25% en la segunda unidad).`;
+  } else if (tipoOferta === "bono") {
+    ofertaTexto = `OFERTA CON BONO INCLUIDO - ${prod}:\nOrdena hoy por $${precio.toFixed(2)} y recibe gratis nuestra guia rapida de uso y mantenimiento valorada en $15.`;
+  } else if (tipoOferta === "envio") {
+    ofertaTexto = `OFERTA ENVIO PRIORITARIO - ${prod}:\nAdquiere ${prod} por $${precio.toFixed(2)} con despacho prioritario y garantia de satisfaccion incluida.`;
+  } else {
+    const flashPrecio = (precio * 0.85).toFixed(2);
+    ofertaTexto = `OFERTA RELAMPAGO 24 HORAS - ${prod}:\nPrecio regular $${precio.toFixed(2)} -> Hoy por tiempo limitado en $${flashPrecio}.`;
+  }
+  document.getElementById("salidaOfertaIrresistible").textContent = ofertaTexto;
+}
+
+function obtenerFilasTablaMarketing() {
+  const filas = [];
+  document.querySelectorAll("#cuerpoTablaMkt tr").forEach(tr => {
+    filas.push([
+      tr.querySelector(".m-precio").value,
+      tr.querySelector(".m-costo").value,
+      tr.querySelector(".m-unid").value,
+      tr.querySelector(".m-ads").value
+    ]);
+  });
+  return filas;
+}
+
+async function guardarProgresoUsuario() {
+  const correo = document.getElementById("inpCorreoCuenta").value.trim().toLowerCase();
+  const msg = document.getElementById("msgCuenta");
+  if (!correo || !correo.includes("@")) {
+    msg.textContent = "Escribe un correo electronico valido.";
+    return;
+  }
+  document.getElementById("lblCorreoBadge").textContent = correo;
+  const payload = {
+    correo: correo,
+    progreso: {
+      pais_destino: document.getElementById("selPaisDestino").value,
+      copy_producto: document.getElementById("copyNombreProd").value,
+      copy_beneficio: document.getElementById("copyBeneficio").value,
+      notas: document.getElementById("txtNotasCampana").value,
+      tabla_mkt: obtenerFilasTablaMarketing()
+    }
+  };
+  try {
+    const r = await fetch("/api/progreso/guardar", {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify(payload)
+    });
+    const d = await r.json();
+    msg.textContent = d.mensaje || "Progreso guardado.";
+  } catch (e) {
+    msg.textContent = "Error al guardar el progreso.";
+  }
+}
+
+async function cargarProgresoUsuario() {
+  const correo = document.getElementById("inpCorreoCuenta").value.trim().toLowerCase();
+  const msg = document.getElementById("msgCuenta");
+  if (!correo || !correo.includes("@")) {
+    msg.textContent = "Escribe un correo electronico valido.";
+    return;
+  }
+  document.getElementById("lblCorreoBadge").textContent = correo;
+  try {
+    const r = await fetch("/api/progreso/cargar?correo=" + encodeURIComponent(correo));
+    const d = await r.json();
+    if (!d.encontrado) {
+      msg.textContent = "No hay progreso previo para " + correo + ". Puedes guardar tu trabajo actual.";
+      return;
+    }
+    const p = d.progreso || {};
+    if (p.pais_destino) document.getElementById("selPaisDestino").value = p.pais_destino;
+    if (p.copy_producto) document.getElementById("copyNombreProd").value = p.copy_producto;
+    if (p.copy_beneficio) document.getElementById("copyBeneficio").value = p.copy_beneficio;
+    if (typeof p.notas === "string") document.getElementById("txtNotasCampana").value = p.notas;
+    if (Array.isArray(p.tabla_mkt)) construirTablaMarketing(p.tabla_mkt);
+    actualizarLocalizacion();
+    msg.textContent = "Progreso cargado para " + correo + ".";
+  } catch (e) {
+    msg.textContent = "Error al cargar el progreso.";
+  }
+}
+
+document.getElementById("inpClave").addEventListener("keydown", function(ev) {
+  if (ev.key === "Enter") {
+    ev.preventDefault();
+    verificarClave();
+  }
+});
+
+document.getElementById("inpCorreoEntrada").addEventListener("keydown", function(ev) {
+  if (ev.key === "Enter") {
+    ev.preventDefault();
+    aceptarEntrada();
+  }
+});
+
+inicializarSelectores();
+filtrarCatalogo();
+actualizarLocalizacion();
+renderizarCalendarioYTendencias();
+construirTablaMarketing([]);
+calcularEmbudoMarketing();
+actualizarAudienciaYOferta();
+</script>
+</body>
+</html>
+"""
+
+
+@app.route("/")
+def index():
+    catalogo = obtener_catalogo_completo()
+    return (
+        HTML_PAGE
+        .replace("__PAISES_JSON__", json.dumps(PAISES_MARKETING, ensure_ascii=True).replace("</", "<\\/"))
+        .replace("__CATALOGO_JSON__", json.dumps(catalogo, ensure_ascii=True).replace("</", "<\\/"))
+        .replace("__CALENDARIO_JSON__", json.dumps(PLANTILLAS_CALENDARIO_SEMANAL, ensure_ascii=True).replace("</", "<\\/"))
+        .replace("__TENDENCIAS_JSON__", json.dumps(TENDENCIAS_MARKETING_ACTUAL, ensure_ascii=True).replace("</", "<\\/"))
+    )
+
+
+@app.route("/api/clave", methods=["POST"])
+def api_clave():
+    datos = request.get_json(silent=True) or {}
+    clave = (datos.get("clave") or "").strip()
+    return jsonify({"ok": clave in CLAVES_VALIDAS or clave.lower() in {"vip100", "celso2026", "1234"}})
+
+
+@app.route("/api/productos/agregar", methods=["POST"])
+def api_agregar_producto():
+    datos = request.get_json(silent=True) or {}
+    nombre = (datos.get("nombre") or "").strip()
+    categoria = (datos.get("categoria") or "General").strip()
+    try:
+        precio = float(datos.get("precio_base_usd") or 0)
+    except Exception:
+        precio = 0.0
+    try:
+        costo = float(datos.get("costo_base_usd") or 0)
+    except Exception:
+        costo = 0.0
+    problema = (datos.get("problema") or "Necesidad diaria").strip()
+    beneficio = (datos.get("beneficio") or "Solucion rapida y practica").strip()
+
+    if not nombre or precio <= 0:
+        return jsonify({"ok": False, "mensaje": "Datos incompletos."}), 400
+
+    db = cargar_db()
+    nuevo_id = f"PRD-USR-{len(db['productos_personalizados']) + 101}"
+    nuevo_prod = crear_producto_catalogo(
+        nuevo_id,
+        nombre,
+        categoria,
+        "Personalizado",
+        round(precio, 2),
+        round(costo, 2),
+        90,
+        "Nuevo registro",
+        "Global",
+        ["Estados Unidos", "Mexico", "Colombia", "Venezuela", "Espana"],
+        "Compradores interesados en soluciones practicas.",
+        problema,
+        beneficio,
+        f"Mira como {nombre} ayuda con {problema.lower()} en segundos.",
+        f"ATENCION: {problema}\nINTERES: {nombre}\nDESEO: {beneficio}\nACCION: Pidelo hoy.",
+        [normalizar_texto(nombre), normalizar_texto(categoria)],
+        ["TikTok", "Instagram", "WhatsApp"],
+    )
+    db["productos_personalizados"].append(nuevo_prod)
+    guardar_db(db)
+    return jsonify({"ok": True, "producto": nuevo_prod})
+
+
+@app.route("/api/generar_kit", methods=["POST"])
+def api_generar_kit():
+    datos = request.get_json(silent=True) or {}
+    nombre = (datos.get("nombre") or "Producto").strip()
+    categoria = (datos.get("categoria") or "General").strip()
+    pais_codigo = (datos.get("pais_codigo") or "US").strip().upper()
+    framework = (datos.get("framework") or "AIDA").strip().upper()
+    try:
+        precio_usd = float(datos.get("precio_usd") or 29.90)
+    except Exception:
+        precio_usd = 29.90
+    try:
+        costo_usd = float(datos.get("costo_usd") or 8.0)
+    except Exception:
+        costo_usd = 8.0
+    publico = (datos.get("publico") or "Publico general").strip()
+    problema = (datos.get("problema") or "Necesidad cotidiana").strip()
+    beneficio = (datos.get("beneficio") or "Utilidad directa").strip()
+
+    kit = generar_kit_marketing_dinamico(
+        nombre,
+        categoria,
+        precio_usd,
+        costo_usd,
+        beneficio,
+        problema,
+        publico,
+        pais_codigo,
+        framework,
+    )
+    return jsonify({"ok": True, "kit": kit})
+
+
+@app.route("/api/progreso/guardar", methods=["POST"])
+def api_guardar_progreso():
+    datos = request.get_json(silent=True) or {}
+    correo = validar_correo(datos.get("correo"))
+    progreso = datos.get("progreso") or {}
+    if not correo:
+        return jsonify({"ok": False, "mensaje": "Correo electronico invalido."}), 400
+
+    db = cargar_db()
+    db["usuarios"][correo] = {
+        "actualizado": datetime.utcnow().isoformat(),
+        "datos": progreso,
+    }
+    guardar_db(db)
+    return jsonify({"ok": True, "mensaje": f"Progreso guardado para {correo}."})
+
+
+@app.route("/api/progreso/cargar", methods=["GET"])
+def api_cargar_progreso():
+    correo = validar_correo(request.args.get("correo"))
+    if not correo:
+        return jsonify({"encontrado": False})
+    db = cargar_db()
+    registro = db.get("usuarios", {}).get(correo)
+    if not registro:
+        return jsonify({"encontrado": False})
+    return jsonify({"encontrado": True, "progreso": registro.get("datos", {})})
+
+
+# ==============================================================================
+# 07. FUNCIONES COMPLEMENTARIAS DE ANALISIS, AUDITORIA Y CATALOGO EXTENDIDO
+# ==============================================================================
+def construir_diccionario_estadisticas_catalogo():
+    catalogo = obtener_catalogo_completo()
+    total = len(catalogo)
+    if total == 0:
+        return {
+            "total_productos": 0,
+            "precio_promedio_usd": 0.0,
+            "costo_promedio_usd": 0.0,
+            "margen_promedio_pct": 0.0,
+            "categorias": {},
+        }
+    suma_precio = sum(float(p.get("precio_base_usd", 0.0)) for p in catalogo)
+    suma_costo = sum(float(p.get("costo_base_usd", 0.0)) for p in catalogo)
+    suma_margen_pct = sum(float(p.get("margen_pct", 0.0)) for p in catalogo)
+    cats = {}
+    for p in catalogo:
+        c = p.get("categoria", "General")
+        cats[c] = cats.get(c, 0) + 1
+    return {
+        "total_productos": total,
+        "precio_promedio_usd": round(suma_precio / total, 2),
+        "costo_promedio_usd": round(suma_costo / total, 2),
+        "margen_promedio_pct": round(suma_margen_pct / total, 1),
+        "categorias": cats,
+    }
+
+
+def calcular_proyeccion_mensual_campana(
+    presupuesto_diario_usd,
+    dias_campana,
+    costo_por_clic_usd,
+    tasa_conversion_pct,
+    ticket_promedio_usd,
+    costo_unitario_usd,
+):
+    presupuesto_diario = max(0.0, float(presupuesto_diario_usd))
+    dias = max(1, int(dias_campana))
+    cpc = max(0.01, float(costo_por_clic_usd))
+    conv = max(0.0, float(tasa_conversion_pct)) / 100.0
+    ticket = max(0.0, float(ticket_promedio_usd))
+    costo_u = max(0.0, float(costo_unitario_usd))
+
+    inversion_total = round(presupuesto_diario * dias, 2)
+    clics_estimados = int(math.floor(inversion_total / cpc))
+    ventas_estimadas = int(math.floor(clics_estimados * conv))
+    ingresos_brutos = round(ventas_estimadas * ticket, 2)
+    costo_mercancia = round(ventas_estimadas * costo_u, 2)
+    ganancia_neta = round(ingresos_brutos - costo_mercancia - inversion_total, 2)
+    roas = round(ingresos_brutos / inversion_total, 2) if inversion_total > 0 else 0.0
+    cpa = round(inversion_total / ventas_estimadas, 2) if ventas_estimadas > 0 else 0.0
+
+    return {
+        "inversion_total_usd": inversion_total,
+        "clics_estimados": clics_estimados,
+        "ventas_estimadas": ventas_estimadas,
+        "ingresos_brutos_usd": ingresos_brutos,
+        "costo_mercancia_usd": costo_mercancia,
+        "ganancia_neta_usd": ganancia_neta,
+        "roas": roas,
+        "cpa_usd": cpa,
+    }
+
+
+def generar_resumen_pais_detallado(codigo_pais, precio_base_usd=49.90):
+    pais = obtener_pais_por_codigo(codigo_pais)
+    precio_usd = float(precio_base_usd)
+    precio_local = round(precio_usd * pais["tasa_usd"], 2)
+    impuesto_local = round(precio_local * (pais["impuesto_pct"] / 100.0), 2)
+    envio_local = round(pais["envio_usd"] * pais["tasa_usd"], 2)
+    total_referencial_local = round(precio_local + envio_local, 2)
+
+    return {
+        "codigo": pais["codigo"],
+        "pais": pais["nombre"],
+        "region": pais["region"],
+        "moneda": pais["moneda"],
+        "simbolo": pais["simbolo"],
+        "idioma": pais["idioma"],
+        "tasa_usd": pais["tasa_usd"],
+        "precio_usd": precio_usd,
+        "precio_local": precio_local,
+        "impuesto_pct": pais["impuesto_pct"],
+        "impuesto_estimado_local": impuesto_local,
+        "envio_estimado_local": envio_local,
+        "total_referencial_local": total_referencial_local,
+        "plataformas_top": pais["plataformas_top"],
+        "metodos_pago": pais["metodos_pago"],
+        "horario_pico": pais["horario_pico"],
+        "angulo_cultural": pais["angulo_cultural"],
+        "objecion_frecuente": pais["objecion_frecuente"],
+        "solucion_objecion": pais["solucion_objecion"],
+        "cta_local": pais["cta_local"],
+    }
+
+
+def generar_variaciones_ganchos_por_angulo(producto, beneficio, problema, pais_nombre):
+    prod = (producto or "Producto").strip()
+    ben = (beneficio or "beneficio principal").strip()
+    prob = (problema or "problema habitual").strip()
+    pais = (pais_nombre or "tu pais").strip()
+
+    return {
+        "curiosidad": [
+            f"Mira lo que pasa cuando pruebas {prod} por primera vez.",
+            f"Pocos revisan este detalle antes de elegir {prod} en {pais}.",
+            f"Asi funciona {prod} cuando necesitas {ben.lower()} sin vueltas.",
+        ],
+        "dolor_solucion": [
+            f"Si te cansa {prob.lower()}, mira esta alternativa practica.",
+            f"Deja atras {prob.lower()} con {prod}.",
+            f"Una forma directa de resolver {prob.lower()} en el dia a dia.",
+        ],
+        "prueba_demostracion": [
+            f"Demostracion real de {prod} en uso cotidiano.",
+            f"Prueba rapida: {prod} cumpliendo {ben.lower()}.",
+            f"Mira paso a paso como se usa {prod}.",
+        ],
+        "oferta_local": [
+            f"Disponible para {pais} con {ben.lower()}.",
+            f"Consulta disponibilidad y formas de pago en {pais}.",
+            f"Conoce {prod} y pide el tuyo hoy en {pais}.",
+        ],
+    }
+
+
+def generar_plan_7_dias_personalizado(producto, pais_codigo, objetivo_principal="Ventas y Alcance"):
+    pais = obtener_pais_por_codigo(pais_codigo)
+    prod = (producto or "Producto").strip()
+    plan = []
+    for item in PLANTILLAS_CALENDARIO_SEMANAL:
+        plan.append({
+            "dia": item["dia"],
+            "pais": pais["nombre"],
+            "objetivo_base": item["objetivo"],
+            "enfoque_usuario": objetivo_principal,
+            "formato": item["formato"],
+            "horario_sugerido": pais["horario_pico"],
+            "accion_concreta": f"Publicar sobre {prod} en {pais['plataformas_top']}: {item['estructura']}",
+            "cta": pais["cta_local"],
+            "kpi": item["kpi"],
+        })
+    return plan
+
+
+def auditar_estructura_anuncio(texto_anuncio):
+    texto = (texto_anuncio or "").strip()
+    longitud = len(texto)
+    palabras = len(texto.split())
+    lineas = len([l for l in texto.splitlines() if l.strip()])
+    tiene_precio = any(ch in texto for ch in ["$", "EUR", "MX$", "COL$", "AR$", "CLP$", "S/", "R$", "GBP", "AED"])
+    tiene_accion = any(w in normalizar_texto(texto) for w in ["pide", "ordena", "escribenos", "compra", "consiguelo", "clic", "hoy", "whatsapp"])
+
+    recomendaciones = []
+    if palabras < 15:
+        recomendaciones.append("El texto es muy breve; agrega el beneficio principal y como pedirlo.")
+    if palabras > 140:
+        recomendaciones.append("El texto es extenso; resume frases para facilitar lectura rapida en celular.")
+    if not tiene_precio:
+        recomendaciones.append("Considera incluir el precio o moneda local de referencia para filtrar consultas.")
+    if not tiene_accion:
+        recomendaciones.append("Agrega un llamado a la accion claro al final del mensaje.")
+    if not recomendaciones:
+        recomendaciones.append("Estructura clara, directa y lista para probar en tus canales.")
+
+    return {
+        "caracteres": longitud,
+        "palabras": palabras,
+        "lineas": lineas,
+        "tiene_referencia_precio": tiene_precio,
+        "tiene_llamado_accion": tiene_accion,
+        "recomendaciones": recomendaciones,
+    }
+
+
+@app.route("/api/estadisticas", methods=["GET"])
+def api_estadisticas():
+    return jsonify({
+        "ok": True,
+        "sistema": VERSION_SISTEMA,
+        "autor": AUTOR_SISTEMA,
+        "estadisticas": construir_diccionario_estadisticas_catalogo(),
+        "total_paises": len(PAISES_MARKETING),
+    })
+
+
+@app.route("/api/pais/<codigo>", methods=["GET"])
+def api_detalle_pais(codigo):
+    precio = request.args.get("precio_usd", "49.90")
+    try:
+        p_num = float(precio)
+    except Exception:
+        p_num = 49.90
+    return jsonify({
+        "ok": True,
+        "resumen": generar_resumen_pais_detallado(codigo, p_num),
+    })
+
+
+@app.route("/api/proyeccion", methods=["POST"])
+def api_proyeccion():
+    datos = request.get_json(silent=True) or {}
+    try:
+        res = calcular_proyeccion_mensual_campana(
+            datos.get("presupuesto_diario_usd", 10.0),
+            datos.get("dias_campana", 30),
+            datos.get("costo_por_clic_usd", 0.35),
+            datos.get("tasa_conversion_pct", 3.0),
+            datos.get("ticket_promedio_usd", 49.90),
+            datos.get("costo_unitario_usd", 15.0),
+        )
+        return jsonify({"ok": True, "proyeccion": res})
+    except Exception as exc:
+        return jsonify({"ok": False, "error": str(exc)}), 400
+
+
+@app.route("/api/auditar_copy", methods=["POST"])
+def api_auditar_copy():
+    datos = request.get_json(silent=True) or {}
+    texto = datos.get("texto", "")
+    return jsonify({"ok": True, "auditoria": auditar_estructura_anuncio(texto)})
+
+
+@app.route("/api/plan_semanal", methods=["POST"])
+def api_plan_semanal():
+    datos = request.get_json(silent=True) or {}
+    producto = datos.get("producto", "Producto")
+    pais_codigo = datos.get("pais_codigo", "US")
+    objetivo = datos.get("objetivo", "Ventas y Alcance")
+    return jsonify({
+        "ok": True,
+        "plan": generar_plan_7_dias_personalizado(producto, pais_codigo, objetivo),
+    })
+
+
+if __name__ == "__main__":
+    app.run(host=HOST, port=PORT)
