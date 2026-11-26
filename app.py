@@ -1920,3 +1920,1038 @@ table.hoja-mkt td input {
 <script id="jsonAjustes" type="application/json">__AJUSTES_JSON__</script>
 <script id="jsonGuia" type="application/json">__GUIA_JSON__</script>
 """
+<script>
+const PAISES = JSON.parse(document.getElementById("jsonPaises").textContent);
+let CATALOGO = JSON.parse(document.getElementById("jsonCatalogo").textContent);
+let GRUPOS = JSON.parse(document.getElementById("jsonGrupos").textContent);
+const PLAN = JSON.parse(document.getElementById("jsonPlan").textContent);
+const SENALES = JSON.parse(document.getElementById("jsonSenales").textContent);
+const AJUSTES_DEF = JSON.parse(document.getElementById("jsonAjustes").textContent);
+const GUIA_APP = JSON.parse(document.getElementById("jsonGuia").textContent);
+
+let sesion = {
+  correo: "",
+  usuario: "",
+  clave: "",
+  ajustes: {}
+};
+
+AJUSTES_DEF.forEach(a => {
+  sesion.ajustes[a.clave] = Boolean(a.activo);
+});
+
+let vistaActiva = "secMenu";
+let origenAjustes = "inicio";
+let timerSplash = null;
+let segSplash = 5;
+
+function norm(t) {
+  return String(t || "")
+    .trim()
+    .toLowerCase()
+    .normalize("NFD")
+    .replace(/[\\u0300-\\u036f]/g, "");
+}
+
+function esc(t) {
+  return String(t || "")
+    .replace(/&/g, "&amp;")
+    .replace(/</g, "&lt;")
+    .replace(/>/g, "&gt;")
+    .replace(/"/g, "&quot;");
+}
+
+function cerrarSplashInmediato() {
+  if (timerSplash) {
+    clearInterval(timerSplash);
+    timerSplash = null;
+  }
+  const sp = document.getElementById("vistaSplash");
+  if (sp) sp.classList.add("oculto");
+  const ini = document.getElementById("vistaInicio");
+  if (ini && document.getElementById("mainApp").classList.contains("oculto") && document.getElementById("vistaAjustes").classList.contains("oculto")) {
+    ini.classList.remove("oculto");
+  }
+}
+
+function iniciarSplashCincoSegundos() {
+  segSplash = 5;
+  const lbl = document.getElementById("splashContador");
+  if (lbl) lbl.textContent = "Entrando en 5s...";
+  timerSplash = setInterval(() => {
+    segSplash -= 1;
+    if (segSplash > 0) {
+      if (lbl) lbl.textContent = `Entrando en ${segSplash}s...`;
+    } else {
+      cerrarSplashInmediato();
+    }
+  }, 1000);
+}
+
+function iniciarFigurasGeometricas() {
+  const canvas = document.getElementById("canvasFiguras");
+  if (!canvas) return;
+  const ctx = canvas.getContext("2d");
+  if (!ctx) return;
+
+  const colores = [
+    "rgba(212, 175, 55, 0.26)",
+    "rgba(242, 211, 121, 0.21)",
+    "rgba(203, 213, 225, 0.19)",
+    "rgba(148, 163, 184, 0.16)",
+  ];
+  const formas = ["triangulo", "cuadrado", "hexagono", "rombo"];
+  const piezas = [];
+
+  function redimensionar() {
+    canvas.width = window.innerWidth;
+    canvas.height = window.innerHeight;
+  }
+
+  redimensionar();
+  window.addEventListener("resize", redimensionar);
+
+  for (let i = 0; i < 16; i++) {
+    piezas.push({
+      x: Math.random() * canvas.width,
+      y: Math.random() * canvas.height,
+      tam: 18 + Math.random() * 26,
+      vx: (Math.random() - 0.5) * 0.45,
+      vy: (Math.random() - 0.5) * 0.45,
+      rot: Math.random() * Math.PI * 2,
+      vrot: (Math.random() - 0.5) * 0.008,
+      forma: formas[i % formas.length],
+      cIdx: i % colores.length,
+      paso: Math.random() * 180,
+    });
+  }
+
+  function poligono(x, y, r, lados, rot) {
+    ctx.beginPath();
+    for (let k = 0; k < lados; k++) {
+      const ang = rot + (k * Math.PI * 2) / lados;
+      const px = x + Math.cos(ang) * r;
+      const py = y + Math.sin(ang) * r;
+      if (k === 0) ctx.moveTo(px, py);
+      else ctx.lineTo(px, py);
+    }
+    ctx.closePath();
+  }
+
+  function loop() {
+    ctx.clearRect(0, 0, canvas.width, canvas.height);
+    if (sesion.ajustes["figuras_geometricas_color"] !== false) {
+      piezas.forEach(p => {
+        p.x += p.vx;
+        p.y += p.vy;
+        p.rot += p.vrot;
+        p.paso += 1;
+        if (p.paso % 180 === 0) {
+          p.cIdx = (p.cIdx + 1) % colores.length;
+        }
+        if (p.x < -60) p.x = canvas.width + 60;
+        if (p.x > canvas.width + 60) p.x = -60;
+        if (p.y < -60) p.y = canvas.height + 60;
+        if (p.y > canvas.height + 60) p.y = -60;
+
+        ctx.save();
+        ctx.strokeStyle = colores[p.cIdx];
+        ctx.lineWidth = 1.5;
+        if (p.forma === "triangulo") {
+          poligono(p.x, p.y, p.tam, 3, p.rot);
+          ctx.stroke();
+        } else if (p.forma === "cuadrado") {
+          ctx.translate(p.x, p.y);
+          ctx.rotate(p.rot);
+          ctx.strokeRect(-p.tam * 0.65, -p.tam * 0.65, p.tam * 1.3, p.tam * 1.3);
+        } else if (p.forma === "hexagono") {
+          poligono(p.x, p.y, p.tam * 0.75, 6, p.rot);
+          ctx.stroke();
+        } else {
+          poligono(p.x, p.y, p.tam * 0.8, 4, p.rot);
+          ctx.stroke();
+        }
+        ctx.restore();
+      });
+    }
+    requestAnimationFrame(loop);
+  }
+  requestAnimationFrame(loop);
+}
+
+(function iniciarBurbuja() {
+  let ctxAudio = null;
+  function obtenerCtx() {
+    const Ctx = window.AudioContext || window.webkitAudioContext;
+    if (!Ctx) return null;
+    if (!ctxAudio) ctxAudio = new Ctx();
+    if (ctxAudio.state === "suspended") ctxAudio.resume().catch(() => {});
+    return ctxAudio;
+  }
+  window.plocBurbuja = function(freqBase, dur) {
+    const ctx = obtenerCtx();
+    if (!ctx) return;
+    try {
+      const t0 = ctx.currentTime;
+      const f1 = freqBase || 275;
+      const f2 = f1 * 1.85;
+      const d = dur || 0.065;
+      const osc = ctx.createOscillator();
+      const flt = ctx.createBiquadFilter();
+      const gain = ctx.createGain();
+      osc.type = "sine";
+      osc.frequency.setValueAtTime(f1, t0);
+      osc.frequency.exponentialRampToValueAtTime(f2, t0 + d);
+      flt.type = "lowpass";
+      flt.frequency.setValueAtTime(900, t0);
+      flt.Q.setValueAtTime(3.2, t0);
+      gain.gain.setValueAtTime(0.0001, t0);
+      gain.gain.linearRampToValueAtTime(0.11, t0 + 0.01);
+      gain.gain.exponentialRampToValueAtTime(0.0001, t0 + d);
+      osc.connect(flt);
+      flt.connect(gain);
+      gain.connect(ctx.destination);
+      osc.start(t0);
+      osc.stop(t0 + d + 0.01);
+    } catch (e) {}
+  };
+  document.addEventListener("pointerdown", function(ev) {
+    obtenerCtx();
+    const el = ev.target && ev.target.closest ? ev.target.closest("button, a.enlace-grupo, .nav-item, .btn-atras") : null;
+    if (!el) return;
+    if (el.classList.contains("btn-oro")) window.plocBurbuja(315, 0.075);
+    else if (el.classList.contains("btn-atras")) window.plocBurbuja(230, 0.06);
+    else window.plocBurbuja(275, 0.065);
+  }, { passive: true });
+})();
+
+function pintarAjustes() {
+  const cont = document.getElementById("listaAjustes");
+  cont.innerHTML = "";
+  AJUSTES_DEF.forEach(a => {
+    const chk = sesion.ajustes[a.clave] !== false;
+    const div = document.createElement("div");
+    div.className = "fila-ajuste";
+    div.innerHTML =
+      `<div><div style="font-weight:700;font-size:14.5px;color:#f8fafc;">${esc(a.titulo)}</div>` +
+      `<div style="font-size:13px;color:#cbd5e1;margin-top:3px;">${esc(a.descripcion)}</div></div>` +
+      `<input type="checkbox" data-k="${esc(a.clave)}" ${chk ? "checked" : ""}>`;
+    cont.appendChild(div);
+  });
+}
+
+function verAjustesPrivacidad() {
+  const appVisible = !document.getElementById("mainApp").classList.contains("oculto");
+  origenAjustes = appVisible ? "app" : "inicio";
+  pintarAjustes();
+  document.getElementById("vistaSplash").classList.add("oculto");
+  document.getElementById("vistaInicio").classList.add("oculto");
+  document.getElementById("headerPrincipal").classList.add("oculto");
+  document.getElementById("mainApp").classList.add("oculto");
+  document.getElementById("vistaAjustes").classList.remove("oculto");
+  window.scrollTo(0, 0);
+}
+
+function volverDesdeAjustes() {
+  document.getElementById("vistaAjustes").classList.add("oculto");
+  if (origenAjustes === "app") {
+    document.getElementById("headerPrincipal").classList.remove("oculto");
+    document.getElementById("mainApp").classList.remove("oculto");
+  } else {
+    document.getElementById("vistaInicio").classList.remove("oculto");
+  }
+  window.scrollTo(0, 0);
+}
+
+function guardarAjustes() {
+  document.querySelectorAll('#listaAjustes input[type="checkbox"]').forEach(cb => {
+    sesion.ajustes[cb.getAttribute("data-k")] = cb.checked;
+  });
+  aplicarCabeceraCuenta();
+  document.getElementById("msgAjustes").textContent = "Ajustes guardados.";
+}
+
+function aplicarCabeceraCuenta() {
+  const badge = document.getElementById("badgeCuenta");
+  if (sesion.ajustes["correo_en_cabecera"] === false) {
+    badge.textContent = sesion.usuario || "Cuenta";
+  } else {
+    badge.textContent = sesion.correo || sesion.usuario || "Cuenta";
+  }
+}
+
+async function entrarCuenta() {
+  const correo = document.getElementById("inCorreo").value.trim().toLowerCase();
+  const usuario = document.getElementById("inUsuario").value.trim();
+  const clave = document.getElementById("inClave").value.trim();
+  const msg = document.getElementById("msgInicio");
+
+  if (!correo || !correo.includes("@")) {
+    msg.textContent = "Ingresa un correo electronico valido.";
+    return;
+  }
+  if (!usuario) {
+    msg.textContent = "Ingresa tu nombre de usuario.";
+    return;
+  }
+  if (!clave || clave.length < 3) {
+    msg.textContent = "Ingresa tu clave personal (minimo 3 caracteres).";
+    return;
+  }
+
+  try {
+    const r = await fetch("/api/cuenta", {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({ correo: correo, usuario: usuario, clave: clave })
+    });
+    const d = await r.json();
+    if (!d.ok) {
+      msg.textContent = d.mensaje || "No se pudo iniciar la cuenta.";
+      return;
+    }
+
+    sesion.correo = correo;
+    sesion.usuario = d.cuenta.usuario || usuario;
+    sesion.clave = clave;
+    if (d.cuenta.ajustes && typeof d.cuenta.ajustes === "object") {
+      sesion.ajustes = Object.assign({}, sesion.ajustes, d.cuenta.ajustes);
+    }
+
+    document.getElementById("pCorreo").value = correo;
+    document.getElementById("pUsuario").value = sesion.usuario;
+    document.getElementById("kpiMenuCuenta").textContent = sesion.usuario;
+    aplicarCabeceraCuenta();
+    if (d.cuenta.progreso) {
+      aplicarProgreso(d.cuenta.progreso);
+    }
+
+    document.getElementById("vistaInicio").classList.add("oculto");
+    document.getElementById("vistaAjustes").classList.add("oculto");
+    document.getElementById("headerPrincipal").classList.remove("oculto");
+    document.getElementById("mainApp").classList.remove("oculto");
+    abrirSeccion("secMenu");
+    window.scrollTo(0, 0);
+  } catch (e) {
+    msg.textContent = "Error al conectar con el servidor.";
+  }
+}
+
+function abrirSeccion(idSec, btnRef) {
+  vistaActiva = idSec;
+  document.querySelectorAll(".sec-panel").forEach(s => s.classList.add("oculto"));
+  const target = document.getElementById(idSec);
+  if (target) target.classList.remove("oculto");
+
+  document.querySelectorAll(".nav-item").forEach(b => {
+    b.classList.toggle("activa", b.getAttribute("data-sec") === idSec);
+    if (btnRef && b === btnRef) b.classList.add("activa");
+  });
+  window.scrollTo(0, 0);
+}
+
+function irDesdeMenu(idSec) {
+  const b = document.querySelector(`.nav-item[data-sec="${idSec}"]`);
+  abrirSeccion(idSec, b);
+}
+
+function accionFlechaArriba() {
+  if (vistaActiva !== "secMenu") {
+    irDesdeMenu("secMenu");
+  } else {
+    document.getElementById("headerPrincipal").classList.add("oculto");
+    document.getElementById("mainApp").classList.add("oculto");
+    document.getElementById("vistaInicio").classList.remove("oculto");
+    window.scrollTo(0, 0);
+  }
+}
+
+function actualizarKpisMenu() {
+  document.getElementById("kpiMenuProds").textContent = String(CATALOGO.length);
+  document.getElementById("kpiMenuGrupos").textContent = String(GRUPOS.length);
+}
+
+function cargarSelectores() {
+  const selCat = document.getElementById("selCatBuscar");
+  const catPrev = selCat.value || "TODAS";
+  const cats = new Set(["TODAS"]);
+  CATALOGO.forEach(p => cats.add(p.categoria));
+  selCat.innerHTML = "";
+  cats.forEach(c => {
+    const op = document.createElement("option");
+    op.value = c;
+    op.textContent = c === "TODAS" ? "Todas las categorias" : c;
+    if (c === catPrev) op.selected = true;
+    selCat.appendChild(op);
+  });
+
+  const selProdPais = document.getElementById("selProdPais");
+  selProdPais.innerHTML = "";
+  CATALOGO.forEach((p, idx) => {
+    const op = document.createElement("option");
+    op.value = idx;
+    op.textContent = `${p.nombre} ($${p.precio_base_usd})`;
+    selProdPais.appendChild(op);
+  });
+
+  const selPaisBuscar = document.getElementById("selPaisBuscar");
+  const selLanPais = document.getElementById("lanPais");
+  const selPais = document.getElementById("selPais");
+  const selCopyPais = document.getElementById("cPais");
+  [selPaisBuscar, selLanPais, selPais, selCopyPais].forEach(sel => {
+    if (!sel) return;
+    const prev = sel.value;
+    sel.innerHTML = "";
+    PAISES.forEach(m => {
+      const op = document.createElement("option");
+      op.value = m.codigo;
+      op.textContent = `${m.nombre} (${m.moneda})`;
+      if (prev && prev === m.codigo) op.selected = true;
+      sel.appendChild(op);
+    });
+  });
+
+  actualizarKpisMenu();
+}
+
+function pintarCatalogo() {
+  const codPais = document.getElementById("selPaisBuscar").value || "VE";
+  const paisObj = PAISES.find(x => x.codigo === codPais) || PAISES[0];
+  const q = norm(document.getElementById("txtBuscarProd").value);
+  const pMax = parseFloat(document.getElementById("numPrecioMax").value) || 0;
+  const cat = document.getElementById("selCatBuscar").value;
+  const cont = document.getElementById("listaCatalogo");
+  cont.innerHTML = "";
+
+  const items = CATALOGO.filter(p => {
+    if (cat !== "TODAS" && p.categoria !== cat) return false;
+    if (pMax > 0 && parseFloat(p.precio_base_usd || 0) > pMax) return false;
+    if (!q) return true;
+    const blob = norm([
+      p.nombre, p.categoria, p.problema, p.beneficio, p.publico, p.autor,
+      p.pais_codigo || "", paisObj.nombre
+    ].join(" "));
+    return blob.includes(q);
+  });
+
+  document.getElementById("estadoBusqueda").textContent =
+    `Pais activo: ${paisObj.nombre} (${paisObj.moneda}) · ${items.length} producto(s) en catalogo${pMax > 0 ? " hasta $" + pMax : ""}.`;
+
+  if (!items.length) {
+    cont.innerHTML = `<div class="caja-salida">No se encontraron productos con ese filtro en el catalogo. Puedes pulsar "BUSCAR EN WEB PUBLICA" para consultar resultados externos.</div>`;
+    return;
+  }
+
+  items.forEach(p => {
+    const idx = CATALOGO.indexOf(p);
+    const precioLocal = (parseFloat(p.precio_base_usd || 0) * (paisObj.tasa_usd || 1)).toFixed(2);
+    const card = document.createElement("div");
+    card.className = "item-tarjeta";
+    let enlaceHtml = "";
+    if (p.enlace_contacto && (p.enlace_contacto.startsWith("http://") || p.enlace_contacto.startsWith("https://"))) {
+      enlaceHtml = `<a class="enlace-grupo" href="${esc(p.enlace_contacto)}" target="_blank" rel="noopener noreferrer">ABRIR ENLACE DEL PRODUCTO</a>`;
+    }
+    card.innerHTML =
+      `<div class="item-top">` +
+      `<div><strong style="font-size:15.5px;">${esc(p.nombre)}</strong>` +
+      `<div style="margin-top:4px;">` +
+      `<span class="chip">${esc(p.categoria)}</span>` +
+      `<span class="chip chip-oro">${esc(paisObj.simbolo)}${precioLocal} en ${esc(paisObj.nombre)}</span>` +
+      `<span class="chip">Stock: ${p.stock ?? 0}</span>` +
+      `</div></div>` +
+      `<div style="text-align:right;"><strong style="color:#d4af37;font-size:16px;">$${p.precio_base_usd}</strong>` +
+      `<div style="font-size:12px;color:#cbd5e1;">Por: ${esc(p.autor || "Base")}</div></div></div>` +
+      `<div style="margin-top:8px;font-size:13.5px;"><strong>Beneficio:</strong> ${esc(p.beneficio)}</div>` +
+      `<div style="margin-top:3px;font-size:13px;color:#cbd5e1;"><strong>Resuelve:</strong> ${esc(p.problema)}</div>` +
+      `<div style="margin-top:8px;"><button type="button" class="btn-plata" onclick="enviarItemAPais(${idx})">CALCULAR EN PAISES</button>${enlaceHtml}</div>`;
+    cont.appendChild(card);
+  });
+}
+
+async function buscarEnWebPublica() {
+  const codPais = document.getElementById("selPaisBuscar").value || "VE";
+  const paisObj = PAISES.find(x => x.codigo === codPais) || PAISES[0];
+  const q = document.getElementById("txtBuscarProd").value.trim();
+  const pMax = parseFloat(document.getElementById("numPrecioMax").value) || 0;
+  const cont = document.getElementById("listaWebResultados");
+  const estado = document.getElementById("estadoBusqueda");
+
+  if (!q) {
+    estado.textContent = "Escribe que producto deseas buscar en la web publica (ej. relojes o camisetas).";
+    return;
+  }
+
+  estado.textContent = `Buscando "${q}" en ${paisObj.nombre}...`;
+  cont.innerHTML = "";
+
+  try {
+    const url = `/api/buscar_web?q=${encodeURIComponent(q)}&pais=${encodeURIComponent(paisObj.nombre)}&precio_max=${encodeURIComponent(pMax)}`;
+    const r = await fetch(url);
+    const d = await r.json();
+    const resList = Array.isArray(d.resultados) ? d.resultados : [];
+    if (!resList.length) {
+      cont.innerHTML = `<div class="caja-salida">No se obtuvieron resultados web publicos para esa consulta en este momento.</div>`;
+      estado.textContent = `Consulta finalizada para "${q}" en ${paisObj.nombre}.`;
+      return;
+    }
+
+    estado.textContent = `Se encontraron ${resList.length} resultado(s) web publicos para "${q}" en ${paisObj.nombre}.`;
+    resList.forEach(item => {
+      const div = document.createElement("div");
+      div.className = "item-tarjeta";
+      const pDet = (item.precio_detectado !== null && item.precio_detectado !== undefined)
+        ? `<span class="chip chip-oro">Ref. aprox: ${item.precio_detectado}</span>`
+        : `<span class="chip">${esc(paisObj.moneda)}</span>`;
+      div.innerHTML =
+        `<div class="item-top"><strong style="color:#d4af37;">${esc(item.titulo)}</strong>${pDet}</div>` +
+        `<div style="font-size:13px;color:#cbd5e1;margin-top:6px;">${esc(item.resumen || "Resultado web publico")}</div>` +
+        `<a class="enlace-grupo" href="${esc(item.url)}" target="_blank" rel="noopener noreferrer">VER ENLACE PUBLICO</a>`;
+      cont.appendChild(div);
+    });
+  } catch (e) {
+    estado.textContent = "No se pudo completar la consulta web en este momento.";
+  }
+}
+
+function limpiarFormularioProducto() {
+  document.getElementById("lanEditId").value = "";
+  document.getElementById("lanNombre").value = "";
+  document.getElementById("lanCategoria").value = "Productos y Servicios";
+  document.getElementById("lanPrecio").value = "25";
+  document.getElementById("lanCosto").value = "5";
+  document.getElementById("lanStock").value = "20";
+  document.getElementById("lanProblema").value = "";
+  document.getElementById("lanBeneficio").value = "";
+  document.getElementById("lanEnlace").value = "";
+  document.getElementById("btnGuardarLanzamiento").textContent = "LANZAR PRODUCTO A LA APLICACION";
+}
+
+function editarProductoLanzado(itemId) {
+  const p = CATALOGO.find(x => x.id === itemId);
+  if (!p) return;
+  document.getElementById("lanEditId").value = p.id;
+  document.getElementById("lanNombre").value = p.nombre || "";
+  document.getElementById("lanCategoria").value = p.categoria || "Productos y Servicios";
+  document.getElementById("lanPais").value = p.pais_codigo || "VE";
+  document.getElementById("lanPrecio").value = p.precio_base_usd || 0;
+  document.getElementById("lanCosto").value = p.costo_base_usd || 0;
+  document.getElementById("lanStock").value = p.stock ?? 0;
+  document.getElementById("lanProblema").value = p.problema || "";
+  document.getElementById("lanBeneficio").value = p.beneficio || "";
+  document.getElementById("lanEnlace").value = p.enlace_contacto || "";
+  document.getElementById("btnGuardarLanzamiento").textContent = "GUARDAR CAMBIOS DEL PRODUCTO";
+  document.getElementById("msgLanzar").textContent = `Editando "${p.nombre}".`;
+  window.scrollTo(0, 0);
+}
+
+async function borrarProductoLanzado(itemId) {
+  const msg = document.getElementById("msgLanzar");
+  try {
+    const r = await fetch(`/api/productos/${encodeURIComponent(itemId)}`, { method: "DELETE" });
+    const d = await r.json();
+    if (d.ok) {
+      CATALOGO = CATALOGO.filter(p => p.id !== itemId);
+      cargarSelectores();
+      pintarCatalogo();
+      pintarLanzados();
+      msg.textContent = "Producto eliminado.";
+    }
+  } catch (e) {
+    msg.textContent = "Error al eliminar el producto.";
+  }
+}
+
+function pintarLanzados() {
+  const cont = document.getElementById("listaLanzados");
+  const lanzados = CATALOGO.filter(p => p.es_lanzamiento_usuario);
+  cont.innerHTML = "";
+  if (!lanzados.length) {
+    cont.innerHTML = `<div class="caja-salida">Aun no has creado productos propios. Usa el formulario de arriba para lanzar el primero y administrarlo aqui.</div>`;
+    return;
+  }
+  lanzados.forEach(p => {
+    const div = document.createElement("div");
+    div.className = "item-tarjeta";
+    div.innerHTML =
+      `<div class="item-top"><strong>${esc(p.nombre)}</strong><span class="chip chip-oro">$${p.precio_base_usd}</span></div>` +
+      `<div style="font-size:13px;color:#cbd5e1;margin-top:4px;">${esc(p.beneficio)} · Stock: ${p.stock ?? 0} · Pais: ${esc(p.pais_codigo || "VE")}</div>` +
+      `<div class="grid-2" style="margin-top:8px;">` +
+      `<button type="button" class="btn-plata" onclick="editarProductoLanzado('${esc(p.id)}')">EDITAR</button>` +
+      `<button type="button" class="btn-plata" onclick="borrarProductoLanzado('${esc(p.id)}')">ELIMINAR</button>` +
+      `</div>`;
+    cont.appendChild(div);
+  });
+}
+
+async function lanzarProductoUsuario() {
+  const editId = document.getElementById("lanEditId").value.trim();
+  const nombre = document.getElementById("lanNombre").value.trim();
+  const categoria = document.getElementById("lanCategoria").value.trim() || "Productos y Servicios";
+  const paisCodigo = document.getElementById("lanPais").value || "VE";
+  const precio = parseFloat(document.getElementById("lanPrecio").value) || 0;
+  const costo = parseFloat(document.getElementById("lanCosto").value) || 0;
+  const stock = parseInt(document.getElementById("lanStock").value, 10) || 0;
+  const problema = document.getElementById("lanProblema").value.trim() || "Necesidad de clientes";
+  const beneficio = document.getElementById("lanBeneficio").value.trim() || "Solucion directa";
+  const enlace = document.getElementById("lanEnlace").value.trim();
+  const msg = document.getElementById("msgLanzar");
+
+  if (!nombre || precio <= 0) {
+    msg.textContent = "Escribe el nombre del producto y un precio mayor a cero.";
+    return;
+  }
+
+  const payload = {
+    nombre: nombre,
+    categoria: categoria,
+    pais_codigo: paisCodigo,
+    precio_base_usd: precio,
+    costo_base_usd: costo,
+    stock: stock,
+    problema: problema,
+    beneficio: beneficio,
+    enlace_contacto: enlace,
+    autor: sesion.usuario || sesion.correo || "Usuario"
+  };
+
+  try {
+    if (editId) {
+      const r = await fetch(`/api/productos/${encodeURIComponent(editId)}`, {
+        method: "PUT",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify(payload)
+      });
+      const d = await r.json();
+      if (d.ok && d.producto) {
+        CATALOGO = CATALOGO.map(item => item.id === editId ? d.producto : item);
+        cargarSelectores();
+        pintarCatalogo();
+        pintarLanzados();
+        limpiarFormularioProducto();
+        msg.textContent = `Producto "${nombre}" actualizado.`;
+      }
+    } else {
+      const r = await fetch("/api/lanzar_producto", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify(payload)
+      });
+      const d = await r.json();
+      if (d.ok && d.producto) {
+        CATALOGO.push(d.producto);
+        cargarSelectores();
+        pintarCatalogo();
+        pintarLanzados();
+        limpiarFormularioProducto();
+        msg.textContent = `Producto "${nombre}" lanzado al catalogo.`;
+      }
+    }
+  } catch (e) {
+    msg.textContent = "Error al guardar el producto.";
+  }
+}
+
+function actualizarLinkWa() {
+  const numRaw = (document.getElementById("waNumero").value || "").replace(/[^0-9]/g, "");
+  const txt = (document.getElementById("waTexto").value || "").trim();
+  const url = numRaw
+    ? `https://wa.me/${numRaw}?text=${encodeURIComponent(txt)}`
+    : "https://wa.me/";
+  document.getElementById("waUrlPreview").textContent = url;
+  document.getElementById("waAbrirLink").href = url;
+}
+
+function pintarGrupos() {
+  const cont = document.getElementById("listaGrupos");
+  cont.innerHTML = "";
+  GRUPOS.forEach(g => {
+    const safeUrl = (g.url && (g.url.startsWith("https://") || g.url.startsWith("http://"))) ? g.url : "https://chat.whatsapp.com/";
+    const div = document.createElement("div");
+    div.className = "item-tarjeta";
+    div.innerHTML =
+      `<div class="item-top"><strong style="color:#d4af37;">${esc(g.nombre)}</strong><span class="chip chip-oro">${esc(g.canal)}</span></div>` +
+      `<div style="font-size:13px;color:#cbd5e1;margin-top:4px;">${esc(g.descripcion)}</div>` +
+      `<a class="enlace-grupo" href="${esc(safeUrl)}" target="_blank" rel="noopener noreferrer">ENTRAR AL GRUPO (${esc(g.canal)})</a>`;
+    cont.appendChild(div);
+  });
+}
+
+async function agregarGrupoEnlace() {
+  const canal = document.getElementById("grpCanal").value;
+  const nombre = document.getElementById("grpNombre").value.trim();
+  const url = document.getElementById("grpUrl").value.trim();
+  const descripcion = document.getElementById("grpDesc").value.trim() || "Comunidad de marketing y contactos";
+  const msg = document.getElementById("msgGrupo");
+
+  if (!nombre || (!url.startsWith("https://") && !url.startsWith("http://"))) {
+    msg.textContent = "Ingresa un nombre y una URL valida que comience con https://";
+    return;
+  }
+
+  try {
+    const r = await fetch("/api/grupos/agregar", {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({ canal: canal, nombre: nombre, url: url, descripcion: descripcion })
+    });
+    const d = await r.json();
+    if (d.ok && d.grupo) {
+      GRUPOS.push(d.grupo);
+      pintarGrupos();
+      actualizarKpisMenu();
+      document.getElementById("grpNombre").value = "";
+      document.getElementById("grpUrl").value = "";
+      msg.textContent = `Enlace "${nombre}" agregado.`;
+    }
+  } catch (e) {
+    msg.textContent = "Error al guardar el enlace.";
+  }
+}
+
+function cargarProductoPais() {
+  const idx = parseInt(document.getElementById("selProdPais").value || "0", 10);
+  const p = CATALOGO[idx];
+  if (p) {
+    document.getElementById("paisPrecioUsd").value = p.precio_base_usd;
+    document.getElementById("paisCostoUsd").value = p.costo_base_usd;
+  }
+  actualizarPais();
+}
+
+function enviarItemAPais(idx) {
+  const p = CATALOGO[idx];
+  if (!p) return;
+  document.getElementById("selProdPais").value = idx;
+  document.getElementById("paisPrecioUsd").value = p.precio_base_usd;
+  document.getElementById("paisCostoUsd").value = p.costo_base_usd;
+  actualizarPais();
+  irDesdeMenu("secPaises");
+}
+
+function actualizarPais() {
+  const cod = document.getElementById("selPais").value;
+  const m = PAISES.find(x => x.codigo === cod) || PAISES[0];
+  const precio = parseFloat(document.getElementById("paisPrecioUsd").value) || 0;
+  const costo = parseFloat(document.getElementById("paisCostoUsd").value) || 0;
+
+  const pLoc = (precio * m.tasa_usd).toFixed(2);
+  const eLoc = (m.envio_usd * m.tasa_usd).toFixed(2);
+  const ganUsd = (precio - costo - m.envio_usd).toFixed(2);
+  const marPct = precio > 0 ? ((parseFloat(ganUsd) / precio) * 100).toFixed(1) : "0.0";
+
+  document.getElementById("pLocal").textContent = `${m.simbolo}${pLoc}`;
+  document.getElementById("pEnvio").textContent = `${m.simbolo}${eLoc}`;
+  document.getElementById("pMargenUsd").textContent = `$${ganUsd}`;
+  document.getElementById("pMargenPct").textContent = `${marPct}%`;
+
+  document.getElementById("detallePais").textContent =
+    `Pais: ${m.nombre} (${m.moneda})\n` +
+    `Medios de pago: ${m.pagos}\n` +
+    `Horario sugerido: ${m.horario}\n` +
+    `Llamado a la accion: ${m.cta}`;
+}
+
+async function generarTextos() {
+  const payload = {
+    nombre: document.getElementById("cNombre").value.trim(),
+    categoria: document.getElementById("cCat").value.trim(),
+    pais_codigo: document.getElementById("cPais").value,
+    formula: document.getElementById("cFormula").value,
+    precio_usd: parseFloat(document.getElementById("cPrecio").value) || 0,
+    costo_usd: 0,
+    publico: document.getElementById("cPublico").value.trim(),
+    problema: document.getElementById("cProblema").value.trim(),
+    beneficio: document.getElementById("cBeneficio").value.trim(),
+  };
+
+  try {
+    const r = await fetch("/api/anuncios", {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify(payload)
+    });
+    const d = await r.json();
+    if (d.ok && d.kit) {
+      document.getElementById("resGanchos").textContent =
+        d.kit.ganchos.map((g, idx) => `${idx + 1}. ${g}`).join("\n");
+      document.getElementById("resCopy").textContent = d.kit.copy_principal;
+      document.getElementById("resGuion").textContent = d.kit.guion_video;
+      const p = d.kit.pais;
+      document.getElementById("resChat").textContent =
+        `Hola, gracias por consultar por *${d.kit.producto}*.\n` +
+        `Beneficio principal: ${payload.beneficio}.\n` +
+        `Referencia en ${p.nombre}: *${p.simbolo}${d.kit.precio_local} (${p.moneda})*.\n` +
+        `Medios de pago: ${p.pagos}.\n` +
+        `Deseas confirmar disponibilidad o resolver alguna duda?`;
+    }
+  } catch (e) {
+    document.getElementById("resCopy").textContent = "Error al generar los textos.";
+  }
+}
+
+function pintarPlanYSenales() {
+  const contPlan = document.getElementById("listaPlan");
+  contPlan.innerHTML = "";
+  PLAN.forEach(item => {
+    const div = document.createElement("div");
+    div.className = "item-tarjeta";
+    div.innerHTML =
+      `<div class="item-top"><strong style="color:#d4af37;">${esc(item.dia)} · ${esc(item.objetivo)}</strong>` +
+      `<span class="chip">${esc(item.formato)}</span></div>` +
+      `<div style="margin-top:6px;font-size:13.5px;">${esc(item.estructura)}</div>` +
+      `<div style="margin-top:4px;font-size:12.5px;color:#cbd5e1;">Indicador: ${esc(item.kpi)}</div>`;
+    contPlan.appendChild(div);
+  });
+
+  const contSen = document.getElementById("listaSenales");
+  contSen.innerHTML = "";
+  SENALES.forEach(s => {
+    const box = document.createElement("div");
+    box.className = "caja-salida";
+    box.innerHTML = `<strong>${esc(s.titulo)}</strong> [${esc(s.enfoque)}]\n${esc(s.detalle)}`;
+    contSen.appendChild(box);
+  });
+}
+
+function construirRoas(filasGuardadas) {
+  const tbody = document.getElementById("cuerpoRoas");
+  tbody.innerHTML = "";
+  for (let i = 0; i < 8; i++) {
+    const f = (filasGuardadas && filasGuardadas[i]) ? filasGuardadas[i] : ["", "", "", ""];
+    const tr = document.createElement("tr");
+    tr.innerHTML =
+      `<td><strong>#${i + 1}</strong></td>` +
+      `<td><input type="number" step="0.1" class="roas-p" value="${esc(f[0])}" oninput="calcularRoas()"></td>` +
+      `<td><input type="number" step="0.1" class="roas-c" value="${esc(f[1])}" oninput="calcularRoas()"></td>` +
+      `<td><input type="number" step="1" class="roas-u" value="${esc(f[2])}" oninput="calcularRoas()"></td>` +
+      `<td><input type="number" step="0.1" class="roas-a" value="${esc(f[3])}" oninput="calcularRoas()"></td>` +
+      `<td class="roas-ut" style="font-weight:700;color:#d4af37;">$0.00</td>` +
+      `<td class="roas-rx" style="font-weight:700;color:#f8fafc;">0.00x</td>`;
+    tbody.appendChild(tr);
+  }
+  calcularRoas();
+}
+
+function calcularRoas() {
+  let ing = 0;
+  let ads = 0;
+  let ut = 0;
+
+  document.querySelectorAll("#cuerpoRoas tr").forEach(tr => {
+    const p = parseFloat(tr.querySelector(".roas-p").value) || 0;
+    const c = parseFloat(tr.querySelector(".roas-c").value) || 0;
+    const u = parseFloat(tr.querySelector(".roas-u").value) || 0;
+    const a = parseFloat(tr.querySelector(".roas-a").value) || 0;
+
+    const ingFila = p * u;
+    const utFila = ingFila - (c * u) - a;
+    const rFila = a > 0 ? (ingFila / a) : 0;
+
+    ing += ingFila;
+    ads += a;
+    ut += utFila;
+
+    tr.querySelector(".roas-ut").textContent = "$" + utFila.toFixed(2);
+    tr.querySelector(".roas-rx").textContent = rFila.toFixed(2) + "x";
+  });
+
+  const roasGlobal = ads > 0 ? (ing / ads) : 0;
+  document.getElementById("rIngresos").textContent = "$" + ing.toFixed(2);
+  document.getElementById("rAds").textContent = "$" + ads.toFixed(2);
+  document.getElementById("rUtilidad").textContent = "$" + ut.toFixed(2);
+  document.getElementById("rRoas").textContent = roasGlobal.toFixed(2) + "x";
+}
+
+function calcularEmbudo() {
+  const pres = parseFloat(document.getElementById("ePres").value) || 0;
+  const cpm = parseFloat(document.getElementById("eCpm").value) || 0;
+  const ctr = parseFloat(document.getElementById("eCtr").value) || 0;
+  const conv = parseFloat(document.getElementById("eConv").value) || 0;
+  const ticket = parseFloat(document.getElementById("eTicket").value) || 0;
+
+  const imp = cpm > 0 ? Math.round((pres / cpm) * 1000) : 0;
+  const clics = Math.round(imp * (ctr / 100));
+  const cpc = clics > 0 ? (pres / clics) : 0;
+  const ventas = Math.round(clics * (conv / 100));
+  const cpa = ventas > 0 ? (pres / ventas) : 0;
+  const fact = ventas * ticket;
+  const roas = pres > 0 ? (fact / pres) : 0;
+
+  document.getElementById("eImp").textContent = imp.toLocaleString("es-ES");
+  document.getElementById("eClics").textContent = clics.toLocaleString("es-ES");
+  document.getElementById("eCpc").textContent = "$" + cpc.toFixed(2);
+  document.getElementById("eVentas").textContent = String(ventas);
+  document.getElementById("eCpa").textContent = "$" + cpa.toFixed(2);
+  document.getElementById("eFact").textContent = "$" + fact.toFixed(2);
+  document.getElementById("eRoas").textContent = roas.toFixed(2) + "x";
+
+  let obs = "Parametros en rango de prueba.";
+  if (ctr < 1.2) {
+    obs = "CTR bajo: revisa el gancho o la pieza visual inicial.";
+  } else if (conv < 2.0) {
+    obs = "Conversion baja: revisa la oferta, claridad de pagos y seguimiento.";
+  } else if (roas >= 3.0) {
+    obs = "Retorno estimado favorable para pruebas controladas.";
+  }
+
+  document.getElementById("eLectura").textContent =
+    `Resumen del embudo:\n` +
+    `- Alcance estimado: ${imp.toLocaleString("es-ES")} impresiones y ${clics} clics.\n` +
+    `- Proyeccion: ${ventas} ventas con CPA estimado de $${cpa.toFixed(2)}.\n` +
+    `- Observacion: ${obs}`;
+}
+
+function actualizarOferta() {
+  const cat = document.getElementById("oCat").value;
+  const tipo = document.getElementById("oTipo").value;
+  const prod = document.getElementById("oProd").value.trim() || "Producto o Servicio";
+  const precio = parseFloat(document.getElementById("oPrecio").value) || 0;
+
+  const audMap = {
+    relojes: "Edad: 18 - 50 anos. Intereses: relojeria, accesorios de uso diario, regalo y estilo personal.",
+    ropa: "Edad: 18 - 45 anos. Intereses: camisetas, moda casual, comodidad y compras online.",
+    tech: "Edad: 18 - 44 anos. Intereses: tecnologia movil, accesorios, productividad y herramientas.",
+    home: "Edad: 24 - 55 anos. Intereses: hogar, organizacion, cocina y comodidad.",
+    biz: "Edad: 20 - 50 anos. Intereses: emprendimiento, ventas, atencion y herramientas de trabajo."
+  };
+
+  document.getElementById("resAud").textContent =
+    `Audiencia sugerida:\n${audMap[cat] || audMap.tech}\n` +
+    `Formatos sugeridos: video corto, carrusel y mensajeria directa.`;
+
+  let oferta = "";
+  if (tipo === "pack") {
+    oferta = `Oferta de 2 unidades - ${prod}:\n1 unidad por $${precio.toFixed(2)} o 2 unidades por $${(precio * 1.75).toFixed(2)}.`;
+  } else if (tipo === "bono") {
+    oferta = `Oferta con complemento - ${prod}:\nLleva ${prod} por $${precio.toFixed(2)} con guia practica incluida.`;
+  } else if (tipo === "envio") {
+    oferta = `Oferta con respaldo - ${prod}:\nPrecio $${precio.toFixed(2)} con informacion clara de despacho y atencion.`;
+  } else {
+    oferta = `Promocion por tiempo limitado - ${prod}:\nPrecio base $${precio.toFixed(2)} -> Condicion activa en $${(precio * 0.85).toFixed(2)}.`;
+  }
+  document.getElementById("resOferta").textContent = oferta;
+}
+
+function leerFilasRoas() {
+  const out = [];
+  document.querySelectorAll("#cuerpoRoas tr").forEach(tr => {
+    out.push([
+      tr.querySelector(".roas-p").value,
+      tr.querySelector(".roas-c").value,
+      tr.querySelector(".roas-u").value,
+      tr.querySelector(".roas-a").value
+    ]);
+  });
+  return out;
+}
+
+function aplicarProgreso(p) {
+  if (!p || typeof p !== "object") return;
+  if (p.c_nombre) document.getElementById("cNombre").value = p.c_nombre;
+  if (p.c_beneficio) document.getElementById("cBeneficio").value = p.c_beneficio;
+  if (typeof p.notas === "string") document.getElementById("pNotas").value = p.notas;
+  if (Array.isArray(p.filas_roas)) construirRoas(p.filas_roas);
+}
+
+async function guardarProgreso() {
+  const correo = document.getElementById("pCorreo").value.trim().toLowerCase() || sesion.correo;
+  const usuario = document.getElementById("pUsuario").value.trim() || sesion.usuario;
+  const msg = document.getElementById("msgProg");
+
+  if (!correo || !correo.includes("@")) {
+    msg.textContent = "Ingresa un correo electronico valido.";
+    return;
+  }
+
+  sesion.correo = correo;
+  if (usuario) sesion.usuario = usuario;
+  aplicarCabeceraCuenta();
+
+  const payload = {
+    correo: correo,
+    usuario: sesion.usuario,
+    clave: sesion.clave,
+    ajustes: sesion.ajustes,
+    progreso: {
+      c_nombre: document.getElementById("cNombre").value,
+      c_beneficio: document.getElementById("cBeneficio").value,
+      notas: document.getElementById("pNotas").value,
+      filas_roas: leerFilasRoas()
+    }
+  };
+
+  try {
+    const r = await fetch("/api/progreso/guardar", {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify(payload)
+    });
+    const d = await r.json();
+    msg.textContent = d.mensaje || "Progreso guardado.";
+  } catch (e) {
+    msg.textContent = "Error al guardar el progreso.";
+  }
+}
+
+async function cargarProgreso() {
+  const correo = document.getElementById("pCorreo").value.trim().toLowerCase() || sesion.correo;
+  const msg = document.getElementById("msgProg");
+
+  if (!correo || !correo.includes("@")) {
+    msg.textContent = "Ingresa un correo electronico valido.";
+    return;
+  }
+
+  try {
+    const url = "/api/progreso/cargar?correo=" + encodeURIComponent(correo) + "&clave=" + encodeURIComponent(sesion.clave || "");
+    const r = await fetch(url);
+    const d = await r.json();
+    if (!d.encontrado) {
+      msg.textContent = "No hay progreso previo guardado para este correo.";
+      return;
+    }
+    if (d.usuario) {
+      sesion.usuario = d.usuario;
+      document.getElementById("pUsuario").value = d.usuario;
+    }
+    if (d.ajustes && typeof d.ajustes === "object") {
+      sesion.ajustes = Object.assign({}, sesion.ajustes, d.ajustes);
+      aplicarCabeceraCuenta();
+    }
+    aplicarProgreso(d.progreso || {});
+    msg.textContent = "Progreso cargado para " + correo + ".";
+  } catch (e) {
+    msg.textContent = "Error al cargar el progreso.";
+  }
+}
+
+function copiarTexto(idElem) {
+  const el = document.getElementById(idElem);
+  if (el && navigator.clipboard && el.textContent) {
+    navigator.clipboard.writeText(el.textContent).catch(() => {});
+  }
+}
+
+function pintarGuia() {
+  document.getElementById("gSirve").textContent = GUIA_APP.para_que_sirve || "";
+  document.getElementById("gFunciona").textContent = GUIA_APP.como_funciona || "";
+  document.getElementById("gDiferencia").textContent = GUIA_APP.que_la_diferencia || "";
+}
+
+iniciarFigurasGeometricas();
+cargarSelectores();
+pintarCatalogo();
+pintarLanzados();
+pintarGrupos();
+actualizarLinkWa();
+actualizarPais();
+pintarPlanYSenales();
+construirRoas([]);
+calcularEmbudo();
+actualizarOferta();
+pintarGuia();
+iniciarSplashCincoSegundos();
+</script>
+</body>
+</html>
+"""
