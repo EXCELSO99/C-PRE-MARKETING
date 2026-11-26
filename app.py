@@ -2955,3 +2955,367 @@ iniciarSplashCincoSegundos();
 </body>
 </html>
 """
+# ==============================================================================
+# 08. TOQUE PICANTE: GANCHOS CON FILO Y ANGULO DE CIERRE (PARTE 6)
+# ==============================================================================
+def generar_ganchos_picantes(producto, pais_nombre="Venezuela", precio_usd=49.0, problema=""):
+    prod = (producto or "este producto").strip()
+    pais = (pais_nombre or "tu mercado").strip()
+    prob = (problema or "perder tiempo o dinero con opciones mediocres").strip()
+    try:
+        precio_fmt = f"${float(precio_usd):.2f}"
+    except Exception:
+        precio_fmt = str(precio_usd or "$0.00")
+
+    return [
+        f"Deja de conformarte con {prob.lower()}: mira lo que hace {prod} por {precio_fmt}.",
+        f"La mayoria en {pais} paga de mas o elige mal por no revisar esto antes de comprar {prod}.",
+        f"Tres segundos bastan para ver por que {prod} deja atras a lo de siempre.",
+        f"Si vas a moverte en {pais} con {prod}, hazlo bien desde el primer dia.",
+        f"Sin vueltas ni relleno: asi funciona {prod} y por que conviene revisarlo hoy.",
+    ]
+
+
+def evaluar_angulo_cierre(precio_usd, costo_usd, pais_codigo="VE"):
+    pais = obtener_pais_mkt(pais_codigo)
+    try:
+        p = float(precio_usd or 0)
+        c = float(costo_usd or 0)
+    except Exception:
+        p, c = 0.0, 0.0
+
+    margen = round(p - c - float(pais.get("envio_usd", 0.0)), 2)
+    if margen >= 25:
+        angulo = "Ataque directo por valor y margen: resalta beneficios, respaldo y respuesta rapida por chat."
+    elif margen >= 10:
+        angulo = "Cierre por practicidad y precio local: muestra moneda local y medios de pago sin friccion."
+    else:
+        angulo = "Cierre por volumen o combo: agrupa unidades o complementa la oferta para cuidar el retorno."
+
+    return {
+        "pais": pais.get("nombre", pais_codigo),
+        "moneda": pais.get("moneda", ""),
+        "margen_estimado_usd": margen,
+        "angulo_recomendado": angulo,
+    }
+
+
+# ==============================================================================
+# 09. RUTAS DEL SERVIDOR FLASK Y ARRANQUE FINAL (PARTE 6)
+# ==============================================================================
+@app.route("/")
+def inicio():
+    catalogo = obtener_catalogo_completo()
+    grupos = obtener_grupos_completos()
+    html = (
+        HTML_PARTE_DOS
+        .replace("__PAISES_JSON__", json.dumps(PAISES_MKT, ensure_ascii=True).replace("</", "<\\/"))
+        .replace("__CATALOGO_JSON__", json.dumps(catalogo, ensure_ascii=True).replace("</", "<\\/"))
+        .replace("__GRUPOS_JSON__", json.dumps(grupos, ensure_ascii=True).replace("</", "<\\/"))
+        .replace("__PLAN_JSON__", json.dumps(PLAN_SEMANAL, ensure_ascii=True).replace("</", "<\\/"))
+        .replace("__SENALES_JSON__", json.dumps(SENALES_MKT, ensure_ascii=True).replace("</", "<\\/"))
+        .replace("__AJUSTES_JSON__", json.dumps(AJUSTES_PRIVACIDAD, ensure_ascii=True).replace("</", "<\\/"))
+        .replace("__GUIA_JSON__", json.dumps(GUIA_APLICACION, ensure_ascii=True).replace("</", "<\\/"))
+    )
+    resp = make_response(html)
+    resp.headers["Cache-Control"] = "no-store, no-cache, must-revalidate, max-age=0"
+    return resp
+
+
+@app.route("/api/cuenta", methods=["POST"])
+def ruta_cuenta():
+    datos = request.get_json(silent=True) or {}
+    correo = validar_correo_limpio(datos.get("correo"))
+    usuario = (datos.get("usuario") or "").strip()
+    clave = (datos.get("clave") or "").strip()
+
+    if not correo:
+        return jsonify({"ok": False, "mensaje": "Correo electronico invalido."}), 400
+    if not usuario:
+        return jsonify({"ok": False, "mensaje": "Nombre de usuario requerido."}), 400
+    if len(clave) < 3:
+        return jsonify({"ok": False, "mensaje": "Clave personal minima de 3 caracteres."}), 400
+
+    h = hash_clave(clave, correo)
+    db = cargar_db()
+    cuentas = db.setdefault("cuentas", {})
+
+    if correo in cuentas:
+        reg = cuentas[correo]
+        if reg.get("clave_hash") and reg["clave_hash"] != h:
+            return jsonify({"ok": False, "mensaje": "Clave personal incorrecta para este correo."}), 403
+        reg["usuario"] = usuario
+        reg["ultimo_acceso"] = datetime.utcnow().isoformat()
+        guardar_db(db)
+        return jsonify({
+            "ok": True,
+            "cuenta": {
+                "correo": correo,
+                "usuario": reg.get("usuario", usuario),
+                "ajustes": reg.get("ajustes", {}),
+                "progreso": reg.get("progreso", {}),
+            },
+        })
+
+    ajustes_ini = {a["clave"]: bool(a["activo"]) for a in AJUSTES_PRIVACIDAD}
+    cuentas[correo] = {
+        "correo": correo,
+        "usuario": usuario,
+        "clave_hash": h,
+        "creado": datetime.utcnow().isoformat(),
+        "ultimo_acceso": datetime.utcnow().isoformat(),
+        "ajustes": ajustes_ini,
+        "progreso": {},
+    }
+    guardar_db(db)
+    return jsonify({
+        "ok": True,
+        "cuenta": {
+            "correo": correo,
+            "usuario": usuario,
+            "ajustes": ajustes_ini,
+            "progreso": {},
+        },
+    })
+
+
+@app.route("/api/lanzar_producto", methods=["POST"])
+def ruta_lanzar_producto():
+    datos = request.get_json(silent=True) or {}
+    nombre = (datos.get("nombre") or "").strip()
+    categoria = (datos.get("categoria") or "Productos y Servicios").strip()
+    pais_codigo = (datos.get("pais_codigo") or "VE").strip().upper()
+    try:
+        precio = float(datos.get("precio_base_usd") or 0)
+    except Exception:
+        precio = 0.0
+    try:
+        costo = float(datos.get("costo_base_usd") or 0)
+    except Exception:
+        costo = 0.0
+    try:
+        stock = max(0, int(datos.get("stock") or 20))
+    except Exception:
+        stock = 20
+    problema = (datos.get("problema") or "Necesidad de clientes").strip()
+    beneficio = (datos.get("beneficio") or "Solucion directa").strip()
+    enlace = (datos.get("enlace_contacto") or "").strip()
+    autor = (datos.get("autor") or "Usuario").strip()
+
+    if not nombre or precio <= 0:
+        return jsonify({"ok": False, "mensaje": "Nombre y precio validos son obligatorios."}), 400
+
+    db = cargar_db()
+    lanzados = db.setdefault("productos_lanzados", [])
+    nuevo_id = f"PRD-LANZ-{len(lanzados) + 101}"
+    nuevo = armar_producto(
+        nuevo_id,
+        nombre,
+        categoria,
+        precio,
+        costo,
+        problema,
+        beneficio,
+        autor=autor,
+        es_lanzamiento_usuario=True,
+        enlace_contacto=enlace,
+        pais_codigo=pais_codigo,
+        stock=stock,
+    )
+    lanzados.append(nuevo)
+    guardar_db(db)
+    return jsonify({"ok": True, "producto": nuevo})
+
+
+@app.route("/api/productos/<item_id>", methods=["PUT", "DELETE"])
+def ruta_producto_item(item_id):
+    if request.method == "DELETE":
+        eliminado = eliminar_producto_lanzado(item_id)
+        if not eliminado:
+            return jsonify({"ok": False, "mensaje": "Producto no encontrado."}), 404
+        return jsonify({"ok": True, "eliminado": item_id})
+
+    datos = request.get_json(silent=True) or {}
+    actualizado = actualizar_producto_lanzado(item_id, datos)
+    if not actualizado:
+        return jsonify({"ok": False, "mensaje": "No se pudo actualizar el producto."}), 400
+    return jsonify({"ok": True, "producto": actualizado})
+
+
+@app.route("/api/buscar_web", methods=["GET"])
+def ruta_buscar_web():
+    q = (request.args.get("q") or "").strip()
+    pais = (request.args.get("pais") or "").strip()
+    try:
+        precio_max = float(request.args.get("precio_max") or 0)
+    except Exception:
+        precio_max = 0.0
+    resultados = buscar_productos_web_publicos(q, pais, precio_max=precio_max)
+    return jsonify({"ok": True, "resultados": resultados})
+
+
+@app.route("/api/grupos/agregar", methods=["POST"])
+def ruta_grupos_agregar():
+    datos = request.get_json(silent=True) or {}
+    canal = (datos.get("canal") or "WhatsApp").strip()
+    nombre = (datos.get("nombre") or "").strip()
+    url = (datos.get("url") or "").strip()
+    descripcion = (datos.get("descripcion") or "Grupo de marketing").strip()
+
+    if not nombre or not (url.startswith("https://") or url.startswith("http://")):
+        return jsonify({"ok": False, "mensaje": "Nombre y URL https:// validos requeridos."}), 400
+
+    db = cargar_db()
+    grupos = db.setdefault("grupos_personalizados", [])
+    nuevo = {
+        "id": f"GRP-USR-{len(grupos) + 101}",
+        "canal": canal,
+        "nombre": nombre,
+        "descripcion": descripcion,
+        "url": url,
+    }
+    grupos.append(nuevo)
+    guardar_db(db)
+    return jsonify({"ok": True, "grupo": nuevo})
+
+
+@app.route("/api/anuncios", methods=["POST"])
+def ruta_anuncios():
+    datos = request.get_json(silent=True) or {}
+    nombre = (datos.get("nombre") or "Producto").strip()
+    categoria = (datos.get("categoria") or "General").strip()
+    pais_codigo = (datos.get("pais_codigo") or "VE").strip().upper()
+    formula = (datos.get("formula") or "AIDA").strip().upper()
+    try:
+        precio_usd = float(datos.get("precio_usd") or 29.90)
+    except Exception:
+        precio_usd = 29.90
+    try:
+        costo_usd = float(datos.get("costo_usd") or 8.0)
+    except Exception:
+        costo_usd = 8.0
+    publico = (datos.get("publico") or "Publico general").strip()
+    problema = (datos.get("problema") or "Necesidad cotidiana").strip()
+    beneficio = (datos.get("beneficio") or "Utilidad directa").strip()
+
+    kit = construir_kit_marketing(
+        nombre,
+        categoria,
+        precio_usd,
+        costo_usd,
+        beneficio,
+        problema,
+        publico,
+        pais_codigo,
+        formula,
+    )
+    pais_obj = kit.get("pais", {})
+    kit["ganchos_picantes"] = generar_ganchos_picantes(
+        nombre, pais_obj.get("nombre", pais_codigo), precio_usd, problema
+    )
+    kit["angulo_cierre"] = evaluar_angulo_cierre(precio_usd, costo_usd, pais_codigo)
+    return jsonify({"ok": True, "kit": kit})
+
+
+@app.route("/api/ganchos_picantes", methods=["POST"])
+def ruta_ganchos_picantes():
+    datos = request.get_json(silent=True) or {}
+    ganchos = generar_ganchos_picantes(
+        datos.get("producto", ""),
+        datos.get("pais", ""),
+        datos.get("precio_usd", 0),
+        datos.get("problema", ""),
+    )
+    return jsonify({"ok": True, "ganchos": ganchos})
+
+
+@app.route("/api/progreso/guardar", methods=["POST"])
+def ruta_progreso_guardar():
+    datos = request.get_json(silent=True) or {}
+    correo = validar_correo_limpio(datos.get("correo"))
+    usuario = (datos.get("usuario") or "").strip()
+    clave = (datos.get("clave") or "").strip()
+    progreso = datos.get("progreso") or {}
+    ajustes = datos.get("ajustes")
+
+    if not correo:
+        return jsonify({"ok": False, "mensaje": "Correo electronico invalido."}), 400
+
+    db = cargar_db()
+    cuentas = db.setdefault("cuentas", {})
+    reg = cuentas.get(correo)
+
+    if reg and reg.get("clave_hash") and clave:
+        if reg["clave_hash"] != hash_clave(clave, correo):
+            return jsonify({"ok": False, "mensaje": "Clave personal incorrecta."}), 403
+
+    if not reg:
+        reg = {
+            "correo": correo,
+            "usuario": usuario or "Usuario",
+            "clave_hash": hash_clave(clave or "default", correo),
+            "creado": datetime.utcnow().isoformat(),
+            "ajustes": {a["clave"]: bool(a["activo"]) for a in AJUSTES_PRIVACIDAD},
+            "progreso": {},
+        }
+        cuentas[correo] = reg
+
+    if usuario:
+        reg["usuario"] = usuario
+    if isinstance(ajustes, dict):
+        reg["ajustes"] = ajustes
+    reg["progreso"] = progreso
+    reg["actualizado"] = datetime.utcnow().isoformat()
+    guardar_db(db)
+    return jsonify({"ok": True, "mensaje": f"Progreso guardado para {correo}."})
+
+
+@app.route("/api/progreso/cargar", methods=["GET"])
+def ruta_progreso_cargar():
+    correo = validar_correo_limpio(request.args.get("correo"))
+    clave = (request.args.get("clave") or "").strip()
+    if not correo:
+        return jsonify({"encontrado": False})
+
+    db = cargar_db()
+    reg = db.get("cuentas", {}).get(correo)
+    if not reg:
+        return jsonify({"encontrado": False})
+
+    if reg.get("clave_hash") and clave:
+        if reg["clave_hash"] != hash_clave(clave, correo):
+            return jsonify({"encontrado": False})
+
+    return jsonify({
+        "encontrado": True,
+        "usuario": reg.get("usuario", ""),
+        "ajustes": reg.get("ajustes", {}),
+        "progreso": reg.get("progreso", {}),
+    })
+
+
+@app.route("/api/embudo", methods=["POST"])
+def ruta_embudo():
+    datos = request.get_json(silent=True) or {}
+    try:
+        res = calcular_embudo_metricas(
+            datos.get("presupuesto_usd", 100.0),
+            datos.get("cpm_usd", 8.5),
+            datos.get("ctr_pct", 2.2),
+            datos.get("conv_pct", 3.5),
+            datos.get("ticket_usd", 95.0),
+        )
+        return jsonify({"ok": True, "embudo": res})
+    except Exception as exc:
+        return jsonify({"ok": False, "error": str(exc)}), 400
+
+
+@app.route("/api/whatsapp/link", methods=["GET"])
+def ruta_whatsapp_link():
+    tel = request.args.get("telefono", "")
+    msg = request.args.get("mensaje", "")
+    return jsonify({"ok": True, "url": armar_url_whatsapp(tel, msg)})
+
+
+if __name__ == "__main__":
+    app.run(host=HOST, port=PORT)
