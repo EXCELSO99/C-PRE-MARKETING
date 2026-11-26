@@ -1556,3 +1556,367 @@ table.hoja-mkt td input {
     <h3>Mis Productos Administrados</h3>
     <div id="listaLanzados"></div>
   </section>
+  <!-- LINKS A GRUPOS DE WHATSAPP Y GOOGLE GROUPS -->
+  <section id="secGrupos" class="sec-panel card-box oculto">
+    <div class="sub-header-bar">
+      <button type="button" class="btn-atras" onclick="irDesdeMenu('secMenu')">&#8592; Menu</button>
+      <h2 style="margin:0;">Links de Grupos de WhatsApp y Google Groups</h2>
+    </div>
+    <p class="desc-texto">Abre enlaces de WhatsApp o Google Groups, arma un enlace directo de WhatsApp y guarda tus propios grupos para contactar clientes, socios o comunidades.</p>
+
+    <div class="card-box" style="background-color:var(--panel);">
+      <h3>Generador Rapido de Link de WhatsApp</h3>
+      <div class="grid-2">
+        <div>
+          <label for="waNumero">Numero con codigo de pais (sin + ni espacios):</label>
+          <input type="text" id="waNumero" placeholder="Ej. 584120000000" oninput="actualizarLinkWa()">
+        </div>
+        <div>
+          <label for="waTexto">Mensaje inicial:</label>
+          <input type="text" id="waTexto" value="Hola, quiero informacion sobre este producto" oninput="actualizarLinkWa()">
+        </div>
+      </div>
+      <div id="waUrlPreview" class="caja-salida">https://wa.me/</div>
+      <div class="grid-2">
+        <a id="waAbrirLink" class="enlace-grupo" href="https://wa.me/" target="_blank" rel="noopener noreferrer" style="text-align:center;">ABRIR ENLACE WHATSAPP</a>
+        <button type="button" class="btn-plata" onclick="copiarTexto('waUrlPreview')">COPIAR ENLACE</button>
+      </div>
+    </div>
+
+    <h3>Grupos y Comunidades</h3>
+    <div id="listaGrupos"></div>
+
+    <div class="card-box card-oro" style="margin-top:14px;background-color:var(--panel);">
+      <h3>Agregar Link de Grupo (WhatsApp o Google Groups)</h3>
+      <div class="grid-2">
+        <div>
+          <label for="grpCanal">Plataforma:</label>
+          <select id="grpCanal">
+            <option value="WhatsApp">WhatsApp</option>
+            <option value="Grupos de Google">Grupos de Google</option>
+          </select>
+        </div>
+        <div>
+          <label for="grpNombre">Nombre del grupo:</label>
+          <input type="text" id="grpNombre" placeholder="Ej. Grupo Emprendedores">
+        </div>
+      </div>
+      <label for="grpUrl">URL del grupo (https://...):</label>
+      <input type="text" id="grpUrl" placeholder="https://chat.whatsapp.com/... o https://groups.google.com/...">
+      <label for="grpDesc">Descripcion breve:</label>
+      <input type="text" id="grpDesc" placeholder="Tema principal del grupo">
+      <button type="button" class="btn-oro" onclick="agregarGrupoEnlace()">GUARDAR ENLACE DE GRUPO</button>
+      <div id="msgGrupo" class="estado-txt"></div>
+    </div>
+  </section>
+
+  <!-- PAISES Y MONEDAS -->
+  <section id="secPaises" class="sec-panel card-box oculto">
+    <div class="sub-header-bar">
+      <button type="button" class="btn-atras" onclick="irDesdeMenu('secMenu')">&#8592; Menu</button>
+      <h2 style="margin:0;">Paises, Monedas y Medios de Pago</h2>
+    </div>
+    <p class="desc-texto">Calcula conversion estimada, envio, margen y medios de pago por pais para adaptar tus publicaciones a cada mercado.</p>
+
+    <div class="grid-2">
+      <div>
+        <label for="selPais">Pais:</label>
+        <select id="selPais" onchange="actualizarPais()"></select>
+      </div>
+      <div>
+        <label for="selProdPais">Producto:</label>
+        <select id="selProdPais" onchange="cargarProductoPais()"></select>
+      </div>
+    </div>
+
+    <div class="grid-2">
+      <div>
+        <label for="paisPrecioUsd">Precio base (USD):</label>
+        <input type="number" id="paisPrecioUsd" value="95.00" step="0.1" oninput="actualizarPais()">
+      </div>
+      <div>
+        <label for="paisCostoUsd">Costo base (USD):</label>
+        <input type="number" id="paisCostoUsd" value="32.00" step="0.1" oninput="actualizarPais()">
+      </div>
+    </div>
+
+    <div class="grid-4" style="margin-top:10px;">
+      <div class="kpi-card"><span>Precio Local</span><strong id="pLocal">$0</strong></div>
+      <div class="kpi-card"><span>Envio Est.</span><strong id="pEnvio">$0</strong></div>
+      <div class="kpi-card"><span>Margen USD</span><strong id="pMargenUsd">$0</strong></div>
+      <div class="kpi-card"><span>Margen %</span><strong id="pMargenPct">0%</strong></div>
+    </div>
+
+    <div id="detallePais" class="caja-salida"></div>
+  </section>
+
+  <!-- ANUNCIOS, GANCHOS Y GUIONES -->
+  <section id="secCopy" class="sec-panel card-box oculto">
+    <div class="sub-header-bar">
+      <button type="button" class="btn-atras" onclick="irDesdeMenu('secMenu')">&#8592; Menu</button>
+      <h2 style="margin:0;">Anuncios, Ganchos y Guiones</h2>
+    </div>
+    <p class="desc-texto">Genera ganchos de apertura, anuncios estructurados, guiones de video corto y mensajes base para chat.</p>
+
+    <div class="grid-2">
+      <div>
+        <label for="cNombre">Producto o servicio:</label>
+        <input type="text" id="cNombre" value="Reloj Deportivo Clasico">
+      </div>
+      <div>
+        <label for="cCat">Categoria:</label>
+        <input type="text" id="cCat" value="Relojes y Accesorios">
+      </div>
+    </div>
+
+    <div class="grid-3">
+      <div>
+        <label for="cPais">Pais:</label>
+        <select id="cPais"></select>
+      </div>
+      <div>
+        <label for="cFormula">Formula:</label>
+        <select id="cFormula">
+          <option value="AIDA">AIDA</option>
+          <option value="PAS">PAS</option>
+          <option value="BAB">BAB</option>
+          <option value="4U">4U</option>
+        </select>
+      </div>
+      <div>
+        <label for="cPrecio">Precio USD:</label>
+        <input type="number" id="cPrecio" value="95.00" step="0.1">
+      </div>
+    </div>
+
+    <label for="cPublico">Publico objetivo:</label>
+    <input type="text" id="cPublico" value="Compradores que buscan relojes practicos y duraderos">
+
+    <label for="cProblema">Problema:</label>
+    <input type="text" id="cProblema" value="Necesidad de hora clara, cronometro y control diario">
+
+    <label for="cBeneficio">Beneficio principal:</label>
+    <input type="text" id="cBeneficio" value="Diseno resistente para uso diario y deportivo">
+
+    <button type="button" class="btn-oro" onclick="generarTextos()">GENERAR GANCHOS, COPY Y GUION</button>
+
+    <h3>Ganchos de Apertura</h3>
+    <div id="resGanchos" class="caja-salida">Pulsa el boton para generar ganchos.</div>
+
+    <h3>Texto de Anuncio</h3>
+    <div id="resCopy" class="caja-salida">Aqui aparecera el anuncio.</div>
+    <button type="button" class="btn-plata" onclick="copiarTexto('resCopy')">COPIAR ANUNCIO</button>
+
+    <h3>Guion de Video Corto</h3>
+    <div id="resGuion" class="caja-salida">Aqui aparecera el guion de video.</div>
+    <button type="button" class="btn-plata" onclick="copiarTexto('resGuion')">COPIAR GUION</button>
+
+    <h3>Mensaje Base para Chat / WhatsApp</h3>
+    <div id="resChat" class="caja-salida">Aqui aparecera la respuesta base para chat.</div>
+    <button type="button" class="btn-plata" onclick="copiarTexto('resChat')">COPIAR MENSAJE CHAT</button>
+  </section>
+
+  <!-- PLAN SEMANAL Y SENALES -->
+  <section id="secPlan" class="sec-panel card-box oculto">
+    <div class="sub-header-bar">
+      <button type="button" class="btn-atras" onclick="irDesdeMenu('secMenu')">&#8592; Menu</button>
+      <h2 style="margin:0;">Plan Semanal y Senales</h2>
+    </div>
+    <p class="desc-texto">Rutina diaria de publicacion y criterios de seguimiento para mantener constancia en tus campanas.</p>
+    <div id="listaPlan"></div>
+    <h3>Senales de Campana</h3>
+    <div id="listaSenales"></div>
+  </section>
+
+  <!-- HOJA ROAS -->
+  <section id="secRoas" class="sec-panel card-box oculto">
+    <div class="sub-header-bar">
+      <button type="button" class="btn-atras" onclick="irDesdeMenu('secMenu')">&#8592; Menu</button>
+      <h2 style="margin:0;">Hoja de Ventas, Costos y ROAS</h2>
+    </div>
+    <p class="desc-texto">Completa hasta 8 filas con precio, costo unitario, unidades e inversion en anuncios para revisar utilidad y retorno.</p>
+
+    <div class="scroll-tabla">
+      <table class="hoja-mkt">
+        <thead>
+          <tr>
+            <th>Fila</th>
+            <th>Precio ($)</th>
+            <th>Costo ($)</th>
+            <th>Unidades</th>
+            <th>Ads ($)</th>
+            <th>Utilidad ($)</th>
+            <th>ROAS</th>
+          </tr>
+        </thead>
+        <tbody id="cuerpoRoas"></tbody>
+      </table>
+    </div>
+
+    <div class="grid-4" style="margin-top:10px;">
+      <div class="kpi-card"><span>Ingresos</span><strong id="rIngresos">$0.00</strong></div>
+      <div class="kpi-card"><span>Ads</span><strong id="rAds">$0.00</strong></div>
+      <div class="kpi-card"><span>Utilidad</span><strong id="rUtilidad">$0.00</strong></div>
+      <div class="kpi-card"><span>ROAS Global</span><strong id="rRoas">0.00x</strong></div>
+    </div>
+
+    <button type="button" class="btn-oro" onclick="calcularRoas()">CALCULAR HOJA</button>
+  </section>
+
+  <!-- EMBUDO Y CPA -->
+  <section id="secEmbudo" class="sec-panel card-box oculto">
+    <div class="sub-header-bar">
+      <button type="button" class="btn-atras" onclick="irDesdeMenu('secMenu')">&#8592; Menu</button>
+      <h2 style="margin:0;">Simulador de Embudo (CTR, CPC, Conversion y CPA)</h2>
+    </div>
+    <p class="desc-texto">Estima impresiones, clics, costo por clic, ventas, CPA y retorno antes de invertir fuerte.</p>
+
+    <div class="grid-2">
+      <div>
+        <label for="ePres">Presupuesto ($ USD):</label>
+        <input type="number" id="ePres" value="100" step="1" oninput="calcularEmbudo()">
+      </div>
+      <div>
+        <label for="eCpm">CPM estimado ($ por 1,000 impresiones):</label>
+        <input type="number" id="eCpm" value="8.5" step="0.1" oninput="calcularEmbudo()">
+      </div>
+    </div>
+
+    <div class="grid-3">
+      <div>
+        <label for="eCtr">CTR (%):</label>
+        <input type="number" id="eCtr" value="2.2" step="0.1" oninput="calcularEmbudo()">
+      </div>
+      <div>
+        <label for="eConv">Conversion (%):</label>
+        <input type="number" id="eConv" value="3.5" step="0.1" oninput="calcularEmbudo()">
+      </div>
+      <div>
+        <label for="eTicket">Ticket promedio ($):</label>
+        <input type="number" id="eTicket" value="95.0" step="0.1" oninput="calcularEmbudo()">
+      </div>
+    </div>
+
+    <div class="grid-4" style="margin-top:12px;">
+      <div class="kpi-card"><span>Impresiones</span><strong id="eImp">0</strong></div>
+      <div class="kpi-card"><span>Clics</span><strong id="eClics">0</strong></div>
+      <div class="kpi-card"><span>CPC</span><strong id="eCpc">$0.00</strong></div>
+      <div class="kpi-card"><span>Ventas Est.</span><strong id="eVentas">0</strong></div>
+    </div>
+
+    <div class="grid-3" style="margin-top:8px;">
+      <div class="kpi-card"><span>CPA</span><strong id="eCpa">$0.00</strong></div>
+      <div class="kpi-card"><span>Facturacion</span><strong id="eFact">$0.00</strong></div>
+      <div class="kpi-card"><span>ROAS</span><strong id="eRoas">0.00x</strong></div>
+    </div>
+
+    <div id="eLectura" class="caja-salida"></div>
+  </section>
+
+  <!-- AUDIENCIAS Y OFERTAS -->
+  <section id="secOfertas" class="sec-panel card-box oculto">
+    <div class="sub-header-bar">
+      <button type="button" class="btn-atras" onclick="irDesdeMenu('secMenu')">&#8592; Menu</button>
+      <h2 style="margin:0;">Audiencias y Constructor de Ofertas</h2>
+    </div>
+    <p class="desc-texto">Define perfiles por categoria y redacta ofertas claras para publicar o enviar por chat.</p>
+
+    <div class="grid-2">
+      <div>
+        <label for="oCat">Categoria:</label>
+        <select id="oCat" onchange="actualizarOferta()">
+          <option value="relojes">Relojes y Accesorios</option>
+          <option value="ropa">Ropa y Camisetas</option>
+          <option value="tech">Tecnologia y Gadgets</option>
+          <option value="home">Hogar y Estilo de Vida</option>
+          <option value="biz">Negocios y Servicios</option>
+        </select>
+      </div>
+      <div>
+        <label for="oTipo">Tipo de oferta:</label>
+        <select id="oTipo" onchange="actualizarOferta()">
+          <option value="pack">Pack de 2 unidades</option>
+          <option value="bono">Producto con complemento</option>
+          <option value="envio">Condicion de envio y respaldo</option>
+          <option value="flash">Promocion temporal</option>
+        </select>
+      </div>
+    </div>
+
+    <div class="grid-2">
+      <div>
+        <label for="oProd">Producto o servicio:</label>
+        <input type="text" id="oProd" value="Reloj Deportivo Clasico" oninput="actualizarOferta()">
+      </div>
+      <div>
+        <label for="oPrecio">Precio base ($ USD):</label>
+        <input type="number" id="oPrecio" value="95.00" step="0.1" oninput="actualizarOferta()">
+      </div>
+    </div>
+
+    <h3>Audiencia Sugerida</h3>
+    <div id="resAud" class="caja-salida"></div>
+
+    <h3>Oferta Lista</h3>
+    <div id="resOferta" class="caja-salida"></div>
+    <button type="button" class="btn-plata" onclick="copiarTexto('resOferta')">COPIAR OFERTA</button>
+  </section>
+
+  <!-- GUARDADO DE PROGRESO -->
+  <section id="secProgreso" class="sec-panel card-box oculto">
+    <div class="sub-header-bar">
+      <button type="button" class="btn-atras" onclick="irDesdeMenu('secMenu')">&#8592; Menu</button>
+      <h2 style="margin:0;">Cuenta y Guardado de Progreso</h2>
+    </div>
+    <p class="desc-texto">Guarda o recupera tus notas, datos de campana y hoja de ROAS asociados a tu cuenta.</p>
+
+    <div class="grid-2">
+      <div>
+        <label for="pCorreo">Correo:</label>
+        <input type="email" id="pCorreo" placeholder="tu_correo@ejemplo.com">
+      </div>
+      <div>
+        <label for="pUsuario">Nombre de usuario:</label>
+        <input type="text" id="pUsuario" placeholder="Nombre de usuario">
+      </div>
+    </div>
+
+    <label for="pNotas">Notas de campana:</label>
+    <textarea id="pNotas" placeholder="Escribe notas, ideas, presupuestos o seguimientos..."></textarea>
+
+    <div class="grid-2">
+      <button type="button" class="btn-oro" onclick="guardarProgreso()">GUARDAR PROGRESO</button>
+      <button type="button" class="btn-plata" onclick="cargarProgreso()">CARGAR PROGRESO</button>
+    </div>
+    <div id="msgProg" class="estado-txt"></div>
+  </section>
+
+  <!-- GUIA: PARA QUE SIRVE, COMO FUNCIONA Y DIFERENCIAS -->
+  <section id="secGuia" class="sec-panel card-box card-oro oculto">
+    <div class="sub-header-bar">
+      <button type="button" class="btn-atras" onclick="irDesdeMenu('secMenu')">&#8592; Menu</button>
+      <h2 style="margin:0;">Para Que Sirve, Como Funciona y Diferencias</h2>
+    </div>
+
+    <h3>Para que sirve esta aplicacion</h3>
+    <div id="gSirve" class="caja-salida"></div>
+
+    <h3>Como funciona</h3>
+    <div id="gFunciona" class="caja-salida"></div>
+
+    <h3>En que se diferencia de otras aplicaciones</h3>
+    <div id="gDiferencia" class="caja-salida"></div>
+  </section>
+
+</main>
+
+<div class="firma-fija">Operaciones y Ventas</div>
+
+<script id="jsonPaises" type="application/json">__PAISES_JSON__</script>
+<script id="jsonCatalogo" type="application/json">__CATALOGO_JSON__</script>
+<script id="jsonGrupos" type="application/json">__GRUPOS_JSON__</script>
+<script id="jsonPlan" type="application/json">__PLAN_JSON__</script>
+<script id="jsonSenales" type="application/json">__SENALES_JSON__</script>
+<script id="jsonAjustes" type="application/json">__AJUSTES_JSON__</script>
+<script id="jsonGuia" type="application/json">__GUIA_JSON__</script>
+"""
