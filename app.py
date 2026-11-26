@@ -1355,7 +1355,7 @@ table.hoja-mkt td input {
   <div class="splash-contador" id="splashContador">Entrando en 5s...</div>
   <button type="button" class="btn-plata" style="max-width:220px;margin-top:14px;" onclick="cerrarSplashInmediato()">CONTINUAR AHORA</button>
 </div>
-"""
+
 <!-- INICIO: CORREO, NOMBRE DE USUARIO, CLAVE PERSONAL Y AJUSTES/PRIVACIDAD -->
 <section id="vistaInicio" class="inicio-centro oculto">
   <div class="wrap-app" style="width:100%;max-width:560px;">
