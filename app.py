@@ -3315,7 +3315,76 @@ def ruta_whatsapp_link():
     tel = request.args.get("telefono", "")
     msg = request.args.get("mensaje", "")
     return jsonify({"ok": True, "url": armar_url_whatsapp(tel, msg)})
+JS_SONIDOS_BURBUJA = """
+<script>
+(function() {
+  let audioCtxBurbuja = null;
+  let sonidosBurbujaActivos = true;
 
+  function asegurarAudioContexto() {
+    if (!sonidosBurbujaActivos) return null;
+    const Ctx = window.AudioContext || window.webkitAudioContext;
+    if (!Ctx) return null;
+    if (!audioCtxBurbuja) {
+      audioCtxBurbuja = new Ctx();
+    }
+    if (audioCtxBurbuja.state === "suspended") {
+      audioCtxBurbuja.resume().catch(function() {});
+    }
+    return audioCtxBurbuja;
+  }
+
+  window.reproducirSonidoBurbuja = function(frecuenciaBase, duracionSeg) {
+    if (!sonidosBurbujaActivos) return;
+    const ctx = asegurarAudioContexto();
+    if (!ctx) return;
+
+    try {
+      const ahora = ctx.currentTime;
+      const fInicio = frecuenciaBase || 270;
+      const fFin = fInicio * 1.85;
+      const dur = duracionSeg || 0.065;
+
+      const osc = ctx.createOscillator();
+      const filtro = ctx.createBiquadFilter();
+      const ganancia = ctx.createGain();
+
+      osc.type = "sine";
+      osc.frequency.setValueAtTime(fInicio, ahora);
+      osc.frequency.exponentialRampToValueAtTime(fFin, ahora + dur);
+
+      filtro.type = "lowpass";
+      filtro.frequency.setValueAtTime(920, ahora);
+      filtro.Q.setValueAtTime(3.2, ahora);
+
+      ganancia.gain.setValueAtTime(0.0001, ahora);
+      ganancia.gain.linearRampToValueAtTime(0.11, ahora + 0.01);
+      ganancia.gain.exponentialRampToValueAtTime(0.0001, ahora + dur);
+
+      osc.connect(filtro);
+      filtro.connect(ganancia);
+      ganancia.connect(ctx.destination);
+
+      osc.start(ahora);
+      osc.stop(ahora + dur + 0.01);
+    } catch (e) {}
+  };
+
+  document.addEventListener("pointerdown", function(ev) {
+    asegurarAudioContexto();
+    const objetivo = ev.target && ev.target.closest ? ev.target.closest("button, a.enlace-grupo, .nav-item, .btn-atras") : null;
+    if (!objetivo) return;
+    if (objetivo.classList.contains("btn-oro")) {
+      window.reproducirSonidoBurbuja(315, 0.075);
+    } else if (objetivo.classList.contains("btn-atras")) {
+      window.reproducirSonidoBurbuja(230, 0.06);
+    } else {
+      window.reproducirSonidoBurbuja(270, 0.065);
+    }
+  }, { passive: true });
+})();
+</script>
+"""
 
 if __name__ == "__main__":
     app.run(host=HOST, port=PORT)
