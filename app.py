@@ -748,3 +748,611 @@ def armar_url_whatsapp(telefono, mensaje):
     if not limpio:
         return "https://wa.me/"
     return f"https://wa.me/{limpio}?text={quote_plus((mensaje or '').strip())}"
+# ==============================================================================
+# 05. GESTION DE PRODUCTOS DEL USUARIO Y EVALUACION FINANCIERA (PARTE 2)
+# ==============================================================================
+def actualizar_producto_lanzado(item_id, cambios):
+    db = cargar_db()
+    lanzados = db.setdefault("productos_lanzados", [])
+    for idx, prod in enumerate(lanzados):
+        if prod.get("id") == item_id:
+            nombre = (cambios.get("nombre") or prod.get("nombre") or "").strip()
+            categoria = (cambios.get("categoria") or prod.get("categoria") or "General").strip()
+            try:
+                precio = float(cambios.get("precio_base_usd", prod.get("precio_base_usd", 0)))
+            except Exception:
+                precio = float(prod.get("precio_base_usd", 0))
+            try:
+                costo = float(cambios.get("costo_base_usd", prod.get("costo_base_usd", 0)))
+            except Exception:
+                costo = float(prod.get("costo_base_usd", 0))
+            problema = (cambios.get("problema") or prod.get("problema") or "").strip()
+            beneficio = (cambios.get("beneficio") or prod.get("beneficio") or "").strip()
+            publico = (cambios.get("publico") or prod.get("publico") or "Publico general").strip()
+            enlace = (cambios.get("enlace_contacto") if "enlace_contacto" in cambios else prod.get("enlace_contacto", "")).strip()
+            pais_codigo = (cambios.get("pais_codigo") or prod.get("pais_codigo") or "VE").strip().upper()
+            try:
+                stock = max(0, int(cambios.get("stock", prod.get("stock", 10))))
+            except Exception:
+                stock = int(prod.get("stock", 10))
+            estado = (cambios.get("estado") or prod.get("estado") or "Activo").strip()
+
+            if not nombre or precio <= 0:
+                return None
+
+            actualizado = armar_producto(
+                prod.get("id"),
+                nombre,
+                categoria,
+                precio,
+                costo,
+                problema,
+                beneficio,
+                publico=publico,
+                autor=prod.get("autor", "Usuario"),
+                es_lanzamiento_usuario=True,
+                enlace_contacto=enlace,
+                pais_codigo=pais_codigo,
+                stock=stock,
+                estado=estado,
+            )
+            lanzados[idx] = actualizado
+            guardar_db(db)
+            return actualizado
+    return None
+
+
+def eliminar_producto_lanzado(item_id):
+    db = cargar_db()
+    lanzados = db.setdefault("productos_lanzados", [])
+    antes = len(lanzados)
+    db["productos_lanzados"] = [p for p in lanzados if p.get("id") != item_id]
+    if len(db["productos_lanzados"]) < antes:
+        guardar_db(db)
+        return True
+    return False
+
+
+def evaluar_oportunidad_producto(precio_usd, costo_usd, envio_usd=3.5, comision_pct=5.0):
+    p = max(0.0, float(precio_usd or 0))
+    c = max(0.0, float(costo_usd or 0))
+    env = max(0.0, float(envio_usd or 0))
+    com = round(p * (max(0.0, float(comision_pct or 0)) / 100.0), 2)
+    ganancia_neta = round(p - c - env - com, 2)
+    margen_real_pct = round((ganancia_neta / p) * 100, 1) if p > 0 else 0.0
+    cpa_maximo = round(max(0.0, ganancia_neta * 0.65), 2)
+
+    if margen_real_pct >= 35:
+        diagnostico = "Margen solido para escalar pruebas de trafico y ofertas."
+    elif margen_real_pct >= 18:
+        diagnostico = "Margen moderado: cuida el CPA y optimiza ticket o combos."
+    else:
+        diagnostico = "Margen ajustado: sube el valor percibido, arma packs o reduce costos."
+
+    return {
+        "precio_usd": round(p, 2),
+        "costo_usd": round(c, 2),
+        "envio_usd": round(env, 2),
+        "comision_usd": com,
+        "ganancia_neta_usd": ganancia_neta,
+        "margen_real_pct": margen_real_pct,
+        "cpa_maximo_recomendado_usd": cpa_maximo,
+        "diagnostico": diagnostico,
+    }
+
+
+# ==============================================================================
+# 06. INTERFAZ WEB CON SPLASH DE 5 SEGUNDOS ($1 AL CENTRO) (PARTE 2)
+# ==============================================================================
+HTML_PARTE_DOS = """<!doctype html>
+<html lang="es">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1">
+<title>C-Pre Marketing · Suite de Negocios y Campanas</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Space+Grotesk:wght@400;500;600;700&display=swap" rel="stylesheet">
+<style>
+:root {
+  --negro: #090a0d;
+  --panel: #12141a;
+  --tarjeta: #181b23;
+  --campo: #0d0f14;
+  --dorado: #d4af37;
+  --dorado-claro: #f2d379;
+  --plateado: #cbd5e1;
+  --borde: #64748b;
+  --blanco: #f8fafc;
+}
+
+* {
+  box-sizing: border-box;
+}
+
+html, body {
+  margin: 0;
+  padding: 0;
+  background-color: var(--negro);
+  color: var(--blanco);
+  font-family: 'Space Grotesk', -apple-system, BlinkMacSystemFont, sans-serif;
+  font-size: 16px;
+}
+
+body {
+  padding-bottom: 68px;
+}
+
+#canvasFiguras {
+  position: fixed;
+  inset: 0;
+  width: 100%;
+  height: 100%;
+  z-index: 0;
+  pointer-events: none;
+}
+
+/* PANTALLA INICIAL PREVIA DE 5 SEGUNDOS CON LOGO $1 AL CENTRO */
+#vistaSplash {
+  position: fixed;
+  inset: 0;
+  z-index: 50;
+  background: radial-gradient(circle at center, rgba(24, 27, 35, 0.96) 0%, rgba(9, 10, 13, 0.99) 75%);
+  display: flex;
+  flex-direction: column;
+  justify-content: center;
+  align-items: center;
+  padding: 20px;
+  text-align: center;
+}
+
+.logo-dolar-uno {
+  width: 128px;
+  height: 128px;
+  border-radius: 28px;
+  background: linear-gradient(145deg, #1b1f2b, #0c0e14);
+  border: 2px solid var(--dorado);
+  box-shadow: 0 0 28px rgba(212, 175, 55, 0.28), inset 0 0 18px rgba(203, 213, 225, 0.12);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 54px;
+  font-weight: 700;
+  color: var(--dorado-claro);
+  letter-spacing: -2px;
+  animation: pulsoLogoUno 1.6s ease-in-out infinite;
+}
+
+@keyframes pulsoLogoUno {
+  0%, 100% {
+    transform: scale(1);
+    border-color: var(--dorado);
+    color: var(--dorado-claro);
+  }
+  50% {
+    transform: scale(1.05);
+    border-color: var(--plateado);
+    color: var(--blanco);
+  }
+}
+
+.splash-sub {
+  margin-top: 14px;
+  font-size: 14px;
+  font-weight: 600;
+  color: var(--plateado);
+}
+
+.splash-contador {
+  margin-top: 6px;
+  font-size: 13px;
+  color: var(--dorado);
+}
+
+.header-app {
+  position: sticky;
+  top: 0;
+  z-index: 25;
+  background-color: rgba(18, 20, 26, 0.96);
+  border-bottom: 1px solid var(--dorado);
+  padding: 12px 14px 10px;
+}
+
+.top-row {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  gap: 10px;
+}
+
+.left-brand {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+}
+
+.btn-atras {
+  width: auto;
+  margin: 0;
+  padding: 7px 12px;
+  font-size: 14px;
+  font-weight: 700;
+  border-radius: 8px;
+  background-color: var(--campo);
+  color: var(--dorado);
+  border: 1px solid var(--borde);
+  cursor: pointer;
+}
+
+.btn-atras:hover {
+  border-color: var(--dorado);
+  color: var(--dorado-claro);
+}
+
+.app-title {
+  margin: 0;
+  font-size: 18px;
+  font-weight: 700;
+  color: var(--dorado);
+}
+
+.app-sub {
+  font-size: 12px;
+  color: var(--plateado);
+}
+
+.badge-cuenta {
+  background-color: var(--campo);
+  border: 1px solid var(--dorado);
+  color: var(--dorado-claro);
+  padding: 6px 11px;
+  border-radius: 8px;
+  font-size: 12px;
+  font-weight: 600;
+  max-width: 46%;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.nav-scroll {
+  display: flex;
+  gap: 8px;
+  overflow-x: auto;
+  padding: 10px 0 3px;
+}
+
+.nav-item {
+  flex: 0 0 auto;
+  width: auto;
+  margin: 0;
+  padding: 8px 13px;
+  font-size: 13px;
+  font-weight: 600;
+  border-radius: 8px;
+  background-color: var(--campo);
+  color: var(--plateado);
+  border: 1px solid var(--borde);
+  cursor: pointer;
+}
+
+.nav-item.activa {
+  background-color: var(--dorado);
+  color: var(--negro);
+  border-color: var(--dorado-claro);
+  font-weight: 700;
+}
+
+.wrap-app {
+  position: relative;
+  z-index: 10;
+  max-width: 1060px;
+  margin: 0 auto;
+  padding: 14px;
+}
+
+.inicio-centro {
+  min-height: calc(100vh - 96px);
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  padding: 8px 0;
+}
+
+.card-box {
+  background-color: rgba(24, 27, 35, 0.96);
+  border: 1px solid var(--borde);
+  border-radius: 12px;
+  padding: 16px;
+  margin-bottom: 14px;
+}
+
+.card-oro {
+  border-color: var(--dorado);
+}
+
+.sub-header-bar {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  margin-bottom: 10px;
+}
+
+h2 {
+  margin: 0 0 6px;
+  font-size: 18px;
+  color: var(--dorado);
+}
+
+h3 {
+  margin: 12px 0 6px;
+  font-size: 15px;
+  color: var(--plateado);
+}
+
+.desc-texto {
+  margin: 0 0 10px;
+  font-size: 14px;
+  color: var(--plateado);
+  line-height: 1.45;
+}
+
+label {
+  display: block;
+  font-size: 13.5px;
+  font-weight: 600;
+  color: var(--plateado);
+  margin-top: 10px;
+}
+
+input[type="text"],
+input[type="password"],
+input[type="email"],
+input[type="number"],
+textarea,
+select {
+  width: 100%;
+  padding: 11px 13px;
+  font-size: 15px;
+  font-family: 'Space Grotesk', sans-serif;
+  border-radius: 8px;
+  border: 1px solid var(--borde);
+  background-color: var(--campo);
+  color: var(--blanco);
+  margin-top: 6px;
+}
+
+input:focus,
+textarea:focus,
+select:focus {
+  outline: none;
+  border-color: var(--dorado);
+}
+
+textarea {
+  min-height: 98px;
+  line-height: 1.45;
+}
+
+.btn-oro {
+  width: 100%;
+  padding: 12px 14px;
+  font-size: 14.5px;
+  font-weight: 700;
+  border-radius: 8px;
+  border: 1px solid var(--dorado-claro);
+  background-color: var(--dorado);
+  color: var(--negro);
+  cursor: pointer;
+  margin-top: 12px;
+}
+
+.btn-plata {
+  width: 100%;
+  padding: 11px 13px;
+  font-size: 13.5px;
+  font-weight: 600;
+  border-radius: 8px;
+  border: 1px solid var(--borde);
+  background-color: var(--campo);
+  color: var(--plateado);
+  cursor: pointer;
+  margin-top: 8px;
+}
+
+.btn-plata:hover {
+  border-color: var(--dorado);
+  color: var(--blanco);
+}
+
+.grid-2 {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 10px;
+}
+
+.grid-3 {
+  display: grid;
+  grid-template-columns: repeat(3, 1fr);
+  gap: 8px;
+}
+
+.grid-4 {
+  display: grid;
+  grid-template-columns: repeat(4, 1fr);
+  gap: 8px;
+}
+
+@media (max-width: 640px) {
+  .grid-2, .grid-3, .grid-4 {
+    grid-template-columns: 1fr 1fr;
+  }
+}
+
+.kpi-card {
+  background-color: var(--campo);
+  border: 1px solid var(--borde);
+  border-radius: 8px;
+  padding: 10px;
+  text-align: center;
+}
+
+.kpi-card span {
+  display: block;
+  font-size: 11.5px;
+  color: var(--plateado);
+}
+
+.kpi-card strong {
+  display: block;
+  font-size: 16px;
+  color: var(--dorado);
+  margin-top: 4px;
+}
+
+.caja-salida {
+  background-color: var(--campo);
+  border-left: 3px solid var(--dorado);
+  border-top: 1px solid rgba(203, 213, 225, 0.2);
+  border-right: 1px solid rgba(203, 213, 225, 0.2);
+  border-bottom: 1px solid rgba(203, 213, 225, 0.2);
+  border-radius: 0 8px 8px 0;
+  padding: 12px 14px;
+  margin-top: 10px;
+  font-size: 14px;
+  line-height: 1.5;
+  white-space: pre-line;
+}
+
+.item-tarjeta {
+  background-color: var(--campo);
+  border: 1px solid rgba(203, 213, 225, 0.28);
+  border-radius: 8px;
+  padding: 12px;
+  margin-top: 10px;
+}
+
+.item-top {
+  display: flex;
+  justify-content: space-between;
+  align-items: flex-start;
+  gap: 8px;
+}
+
+.chip {
+  display: inline-block;
+  padding: 3px 8px;
+  border-radius: 6px;
+  font-size: 11.5px;
+  font-weight: 600;
+  background-color: var(--tarjeta);
+  color: var(--plateado);
+  border: 1px solid var(--borde);
+  margin: 3px 4px 3px 0;
+}
+
+.chip-oro {
+  color: var(--dorado-claro);
+  border-color: var(--dorado);
+}
+
+.fila-ajuste {
+  display: flex;
+  justify-content: space-between;
+  align-items: flex-start;
+  gap: 12px;
+  background-color: var(--campo);
+  border: 1px solid rgba(203, 213, 225, 0.24);
+  border-radius: 8px;
+  padding: 11px 12px;
+  margin-top: 8px;
+}
+
+.fila-ajuste input[type="checkbox"] {
+  width: 20px;
+  height: 20px;
+  accent-color: var(--dorado);
+  cursor: pointer;
+}
+
+.enlace-grupo {
+  display: inline-block;
+  margin-top: 8px;
+  padding: 8px 12px;
+  border-radius: 8px;
+  background-color: var(--dorado);
+  color: var(--negro);
+  font-weight: 700;
+  font-size: 13px;
+  text-decoration: none;
+}
+
+.scroll-tabla {
+  width: 100%;
+  overflow-x: auto;
+  margin-top: 10px;
+}
+
+table.hoja-mkt {
+  width: 100%;
+  min-width: 660px;
+  border-collapse: collapse;
+}
+
+table.hoja-mkt th,
+table.hoja-mkt td {
+  border: 1px solid var(--borde);
+  padding: 8px;
+  text-align: center;
+}
+
+table.hoja-mkt th {
+  background-color: var(--campo);
+  color: var(--dorado);
+  font-size: 13px;
+}
+
+table.hoja-mkt td input {
+  margin: 0;
+  height: 42px;
+  font-size: 14.5px;
+}
+
+.estado-txt {
+  font-size: 13.5px;
+  color: var(--dorado-claro);
+  margin-top: 8px;
+  line-height: 1.4;
+}
+
+.firma-fija {
+  position: fixed;
+  right: 12px;
+  bottom: 10px;
+  z-index: 30;
+  background-color: var(--panel);
+  border: 1px solid var(--dorado);
+  color: var(--dorado);
+  font-size: 11px;
+  font-weight: 700;
+  padding: 5px 10px;
+  border-radius: 6px;
+}
+
+.oculto {
+  display: none !important;
+}
+</style>
+</head>
+<body>
+
+<canvas id="canvasFiguras" aria-hidden="true"></canvas>
+
+<!-- PANTALLA INICIAL PREVIA DE 5 SEGUNDOS CON LOGO $1 AL CENTRO -->
+<div id="vistaSplash" role="status" aria-live="polite">
+  <div class="logo-dolar-uno">$1</div>
+  <div class="splash-sub">Preparando espacio de trabajo y campanas...</div>
+  <div class="splash-contador" id="splashContador">Entrando en 5s...</div>
+  <button type="button" class="btn-plata" style="max-width:220px;margin-top:14px;" onclick="cerrarSplashInmediato()">CONTINUAR AHORA</button>
+</div>
+"""
