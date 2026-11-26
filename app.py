@@ -1356,3 +1356,203 @@ table.hoja-mkt td input {
   <button type="button" class="btn-plata" style="max-width:220px;margin-top:14px;" onclick="cerrarSplashInmediato()">CONTINUAR AHORA</button>
 </div>
 """
+<!-- INICIO: CORREO, NOMBRE DE USUARIO, CLAVE PERSONAL Y AJUSTES/PRIVACIDAD -->
+<section id="vistaInicio" class="inicio-centro oculto">
+  <div class="wrap-app" style="width:100%;max-width:560px;">
+    <div class="card-box card-oro">
+      <h2>C-Pre Marketing</h2>
+      <div style="font-size:13px;font-weight:700;color:var(--plateado);margin-bottom:8px;">Centro de Operaciones y Ventas</div>
+      <p class="desc-texto">
+        Ingresa tu correo, nombre de usuario y clave personal para guardar y recuperar tu progreso.
+        Acceso gratuito sin clave externa de pago.
+      </p>
+
+      <label for="inCorreo">Correo electronico:</label>
+      <input type="email" id="inCorreo" placeholder="tu_correo@ejemplo.com">
+
+      <label for="inUsuario">Nombre de usuario:</label>
+      <input type="text" id="inUsuario" placeholder="Ej. Celso">
+
+      <label for="inClave">Clave personal de cuenta:</label>
+      <input type="password" id="inClave" placeholder="Tu clave personal">
+
+      <button type="button" class="btn-oro" onclick="entrarCuenta()">ENTRAR A LA APLICACION</button>
+      <button type="button" class="btn-plata" onclick="verAjustesPrivacidad()">AJUSTES Y PRIVACIDAD</button>
+      <div id="msgInicio" class="estado-txt"></div>
+    </div>
+  </div>
+</section>
+
+<!-- AJUSTES Y PRIVACIDAD -->
+<section id="vistaAjustes" class="wrap-app oculto">
+  <div class="sub-header-bar">
+    <button type="button" class="btn-atras" onclick="volverDesdeAjustes()">&#8592; Regresar</button>
+    <h2 style="margin:0;">Ajustes y Privacidad</h2>
+  </div>
+  <div class="card-box card-oro">
+    <p class="desc-texto">Configuracion de privacidad, cuenta gratuita, enlaces y figuras geometricas.</p>
+    <div id="listaAjustes"></div>
+    <button type="button" class="btn-oro" onclick="guardarAjustes()">GUARDAR AJUSTES</button>
+    <div id="msgAjustes" class="estado-txt"></div>
+  </div>
+</section>
+
+<!-- CABECERA Y NAVEGACION -->
+<header id="headerPrincipal" class="header-app oculto">
+  <div class="top-row">
+    <div class="left-brand">
+      <button type="button" class="btn-atras" onclick="accionFlechaArriba()" title="Regresar al menu principal">&#8592;</button>
+      <div>
+        <div class="app-title">C-Pre Marketing</div>
+        <div class="app-sub">Operaciones y Ventas</div>
+      </div>
+    </div>
+    <div class="badge-cuenta" id="badgeCuenta">Cuenta</div>
+  </div>
+
+  <nav class="nav-scroll" aria-label="Secciones de la aplicacion">
+    <button type="button" class="nav-item activa" data-sec="secMenu" onclick="abrirSeccion('secMenu', this)">Menu Principal</button>
+    <button type="button" class="nav-item" data-sec="secBuscar" onclick="abrirSeccion('secBuscar', this)">Buscar Productos</button>
+    <button type="button" class="nav-item" data-sec="secLanzar" onclick="abrirSeccion('secLanzar', this)">Manejar Mis Productos</button>
+    <button type="button" class="nav-item" data-sec="secGrupos" onclick="abrirSeccion('secGrupos', this)">WhatsApp y Google</button>
+    <button type="button" class="nav-item" data-sec="secPaises" onclick="abrirSeccion('secPaises', this)">Paises y Monedas</button>
+    <button type="button" class="nav-item" data-sec="secCopy" onclick="abrirSeccion('secCopy', this)">Anuncios y Guiones</button>
+    <button type="button" class="nav-item" data-sec="secPlan" onclick="abrirSeccion('secPlan', this)">Plan Semanal</button>
+    <button type="button" class="nav-item" data-sec="secRoas" onclick="abrirSeccion('secRoas', this)">Hoja ROAS</button>
+    <button type="button" class="nav-item" data-sec="secEmbudo" onclick="abrirSeccion('secEmbudo', this)">Embudo y CPA</button>
+    <button type="button" class="nav-item" data-sec="secOfertas" onclick="abrirSeccion('secOfertas', this)">Audiencias y Ofertas</button>
+    <button type="button" class="nav-item" data-sec="secProgreso" onclick="abrirSeccion('secProgreso', this)">Progreso</button>
+    <button type="button" class="nav-item" data-sec="secGuia" onclick="abrirSeccion('secGuia', this)">Para Que Sirve</button>
+  </nav>
+</header>
+
+<main id="mainApp" class="wrap-app oculto">
+
+  <!-- MENU PRINCIPAL -->
+  <section id="secMenu" class="sec-panel card-box card-oro">
+    <h2>Menu Principal</h2>
+    <p class="desc-texto">Busca productos por pais y precio, crea y administra tus propios productos, entra a grupos de WhatsApp y Google Groups, y gestiona tus campanas.</p>
+
+    <div class="grid-3">
+      <div class="kpi-card"><span>Productos</span><strong id="kpiMenuProds">0</strong></div>
+      <div class="kpi-card"><span>Grupos / Enlaces</span><strong id="kpiMenuGrupos">0</strong></div>
+      <div class="kpi-card"><span>Cuenta</span><strong id="kpiMenuCuenta">Activa</strong></div>
+    </div>
+
+    <div class="grid-2" style="margin-top:12px;">
+      <button type="button" class="btn-plata" onclick="irDesdeMenu('secBuscar')">1. Buscar Productos (Pais y Precio)</button>
+      <button type="button" class="btn-plata" onclick="irDesdeMenu('secLanzar')">2. Manejar y Lanzar Mis Productos</button>
+      <button type="button" class="btn-plata" onclick="irDesdeMenu('secGrupos')">3. Links WhatsApp y Google Groups</button>
+      <button type="button" class="btn-plata" onclick="irDesdeMenu('secPaises')">4. Paises, Monedas y Pagos</button>
+      <button type="button" class="btn-plata" onclick="irDesdeMenu('secCopy')">5. Anuncios, Ganchos y Guiones</button>
+      <button type="button" class="btn-plata" onclick="irDesdeMenu('secPlan')">6. Plan Semanal y Senales</button>
+      <button type="button" class="btn-plata" onclick="irDesdeMenu('secRoas')">7. Hoja de Ventas y ROAS</button>
+      <button type="button" class="btn-plata" onclick="irDesdeMenu('secEmbudo')">8. Simulador de Embudo y CPA</button>
+      <button type="button" class="btn-plata" onclick="irDesdeMenu('secOfertas')">9. Audiencias y Ofertas</button>
+      <button type="button" class="btn-plata" onclick="irDesdeMenu('secProgreso')">10. Guardado de Progreso</button>
+      <button type="button" class="btn-plata" onclick="irDesdeMenu('secGuia')">11. Para Que Sirve y Diferencias</button>
+      <button type="button" class="btn-plata" onclick="verAjustesPrivacidad()">12. Ajustes y Privacidad</button>
+    </div>
+  </section>
+
+  <!-- BUSCAR PRODUCTOS POR PAIS, PRECIO Y WEB PUBLICA -->
+  <section id="secBuscar" class="sec-panel card-box oculto">
+    <div class="sub-header-bar">
+      <button type="button" class="btn-atras" onclick="irDesdeMenu('secMenu')">&#8592; Menu</button>
+      <h2 style="margin:0;">Buscar Productos por Pais y Precio</h2>
+    </div>
+    <p class="desc-texto">Selecciona un pais, escribe el producto (por ejemplo: relojes o camisetas), filtra por precio maximo y consulta resultados en catalogo y web publica permitida.</p>
+
+    <div class="grid-3">
+      <div>
+        <label for="selPaisBuscar">Pais:</label>
+        <select id="selPaisBuscar" onchange="pintarCatalogo()"></select>
+      </div>
+      <div>
+        <label for="txtBuscarProd">Producto o palabra clave:</label>
+        <input type="text" id="txtBuscarProd" placeholder="Ej. relojes, camisetas..." oninput="pintarCatalogo()">
+      </div>
+      <div>
+        <label for="numPrecioMax">Precio maximo (0 = sin tope):</label>
+        <input type="number" id="numPrecioMax" value="0" min="0" step="1" oninput="pintarCatalogo()">
+      </div>
+    </div>
+
+    <div class="grid-2" style="margin-top:8px;">
+      <div>
+        <label for="selCatBuscar">Categoria del catalogo:</label>
+        <select id="selCatBuscar" onchange="pintarCatalogo()">
+          <option value="TODAS">Todas las categorias</option>
+        </select>
+      </div>
+      <div style="display:flex;align-items:flex-end;">
+        <button type="button" class="btn-oro" style="margin-top:0;" onclick="buscarEnWebPublica()">BUSCAR EN WEB PUBLICA</button>
+      </div>
+    </div>
+
+    <div id="estadoBusqueda" class="estado-txt"></div>
+    <h3>Productos en Catalogo y Lanzamientos</h3>
+    <div id="listaCatalogo"></div>
+
+    <h3>Resultados Web Publicos Permitidos</h3>
+    <div id="listaWebResultados"></div>
+  </section>
+
+  <!-- MANEJAR Y LANZAR MIS PRODUCTOS -->
+  <section id="secLanzar" class="sec-panel card-box oculto">
+    <div class="sub-header-bar">
+      <button type="button" class="btn-atras" onclick="irDesdeMenu('secMenu')">&#8592; Menu</button>
+      <h2 style="margin:0;">Manejar y Lanzar Mis Productos</h2>
+    </div>
+    <p class="desc-texto">Crea, edita, controla stock o elimina tus propios productos y servicios dentro de la aplicacion.</p>
+
+    <input type="hidden" id="lanEditId" value="">
+
+    <div class="grid-3">
+      <div>
+        <label for="lanNombre">Nombre del producto:</label>
+        <input type="text" id="lanNombre" placeholder="Ej. Reloj Casual Acero">
+      </div>
+      <div>
+        <label for="lanCategoria">Categoria:</label>
+        <input type="text" id="lanCategoria" value="Productos y Servicios">
+      </div>
+      <div>
+        <label for="lanPais">Pais principal:</label>
+        <select id="lanPais"></select>
+      </div>
+    </div>
+
+    <div class="grid-3">
+      <div>
+        <label for="lanPrecio">Precio de venta (USD):</label>
+        <input type="number" id="lanPrecio" value="25" step="0.1">
+      </div>
+      <div>
+        <label for="lanCosto">Costo base (USD):</label>
+        <input type="number" id="lanCosto" value="5" step="0.1">
+      </div>
+      <div>
+        <label for="lanStock">Unidades disponibles:</label>
+        <input type="number" id="lanStock" value="20" step="1">
+      </div>
+    </div>
+
+    <label for="lanProblema">Problema que resuelve:</label>
+    <input type="text" id="lanProblema" placeholder="Ej. Falta de orden al responder consultas">
+
+    <label for="lanBeneficio">Beneficio principal:</label>
+    <input type="text" id="lanBeneficio" placeholder="Ej. Respuestas claras y seguimiento constante">
+
+    <label for="lanEnlace">Enlace de contacto, WhatsApp o pagina (opcional):</label>
+    <input type="text" id="lanEnlace" placeholder="https://wa.me/... o enlace de tu oferta">
+
+    <div class="grid-2">
+      <button type="button" class="btn-oro" id="btnGuardarLanzamiento" onclick="lanzarProductoUsuario()">LANZAR PRODUCTO A LA APLICACION</button>
+      <button type="button" class="btn-plata" onclick="limpiarFormularioProducto()">LIMPIAR FORMULARIO</button>
+    </div>
+    <div id="msgLanzar" class="estado-txt"></div>
+
+    <h3>Mis Productos Administrados</h3>
+    <div id="listaLanzados"></div>
+  </section>
