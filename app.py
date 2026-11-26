@@ -3016,7 +3016,8 @@ def inicio():
         .replace("__SENALES_JSON__", json.dumps(SENALES_MKT, ensure_ascii=True).replace("</", "<\\/"))
         .replace("__AJUSTES_JSON__", json.dumps(AJUSTES_PRIVACIDAD, ensure_ascii=True).replace("</", "<\\/"))
         .replace("__GUIA_JSON__", json.dumps(GUIA_APLICACION, ensure_ascii=True).replace("</", "<\\/"))
-    )
+        html = html.replace("</body>", JS_SONIDOS_BURBUJA + "\n</body>")
+
     resp = make_response(html)
     resp.headers["Cache-Control"] = "no-store, no-cache, must-revalidate, max-age=0"
     return resp
